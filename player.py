@@ -9,7 +9,7 @@ class Player:
         self.width = 30
         self.height = 30
         self.health = health  # Используем переданное значение
-        self.speed = 5
+        self.speed = 3
         self.ammo = ammo  # Используем переданное значение
         self.inventory = ["pistol", "medkit"]
         self.current_weapon = "pistol"
