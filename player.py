@@ -16,6 +16,7 @@ class Player:
 
     def move(self, direction, level):
         # Двигаем мир в противоположную сторону
+        print(self.world_x, self.world_y)
         if direction == "up":
             self.world_y -= self.speed
         elif direction == "down":
@@ -27,6 +28,7 @@ class Player:
 
         # Проверка коллизий (теперь с мировыми координатами)
         if level.is_position_blocked(self.world_x, self.world_y, self.width, self.height):
+            print("BLOCKED")
             # Откат движения при коллизии
             if direction == "up":
                 self.world_y += self.speed

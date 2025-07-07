@@ -30,7 +30,11 @@ class Level:
 
     def is_position_blocked(self, x, y, width, height):
         """Check if position is blocked by obstacles (world coordinates)"""
-        player_rect = pygame.Rect(x, y, width, height)
+        player_rect = pygame.Rect(
+            x - width//2,
+            y - height//2,
+            width, height
+            )
         for obstacle in self.obstacles:
             obstacle_rect = pygame.Rect(
                 obstacle['x'],
@@ -47,44 +51,36 @@ class Level:
         camera_offset_x = screen_width // 2 - player_world_x
         camera_offset_y = screen_height // 2 - player_world_y
         
-        # Отрисовка фона
-        if self.background:
-            # Рассчитываем сколько раз нужно нарисовать фон (для бесшовного повторения)
-            bg_start_x = -((-camera_offset_x) % self.bg_width) - self.bg_width
-            bg_start_y = -((-camera_offset_y) % self.bg_height) - self.bg_height
-            
-            for y in range(bg_start_y, screen_height, self.bg_height):
-                for x in range(bg_start_x, screen_width, self.bg_width):
-                    screen.blit(self.background, (x, y))
+        # 1. Находим границы уровня из obstacles
+        level_left = min(obs['x'] for obs in self.obstacles)
+        level_right = max(obs['x'] + obs['width'] for obs in self.obstacles)
+        level_top = min(obs['y'] for obs in self.obstacles)
+        level_bottom = max(obs['y'] + obs['height'] for obs in self.obstacles)
         
-        # Отрисовка препятствий
-        for obstacle in self.obstacles:
-            pygame.draw.rect(
-                screen, 
-                (100, 100, 100, 128),  # Полупрозрачные препятствия
-                (obstacle['x'] + camera_offset_x,
-                 obstacle['y'] + camera_offset_y,
-                 obstacle['width'],
-                 obstacle['height'])
+        level_width = level_right - level_left
+        level_height = level_bottom - level_top
+        
+        # 2. Отрисовка фона (только внутри границ)
+        if self.background:
+            # Масштабируем фон под размер уровня
+            scaled_bg = pygame.transform.scale(self.background, (level_width, level_height))
+            
+            # Рисуем фон один раз с учетом смещения камеры
+            screen.blit(
+                scaled_bg,
+                (level_left + camera_offset_x, level_top + camera_offset_y)
             )
         
-        # Отрисовка объектов
-        for obj in self.objects:
-            color = {
-                'medkit': (0, 255, 0),
-                'ammo': (255, 255, 0),
-                'rifle': (139, 69, 19),
-                'portal': (255, 0, 255)
-            }.get(obj['type'], (0, 0, 255))
-            
-            if obj['type'] == 'portal':
-                pygame.draw.circle(
-                    screen, color,
-                    (int(obj['x'] + camera_offset_x), int(obj['y'] + camera_offset_y)),
-                    15
+        # 3. Отрисовка границ (препятствий)
+        for obstacle in self.obstacles:
+            pygame.draw.rect(
+                screen,
+                (100, 100, 100, 180),  # Полупрозрачные серые границы
+                (
+                    obstacle['x'] + camera_offset_x,
+                    obstacle['y'] + camera_offset_y,
+                    obstacle['width'],
+                    obstacle['height']
                 )
-            else:
-                pygame.draw.rect(
-                    screen, color,
-                    (obj['x'] + camera_offset_x, obj['y'] + camera_offset_y, 20, 20)
-                )
+            )
+    

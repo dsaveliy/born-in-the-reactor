@@ -2,7 +2,7 @@ import pygame
 import sys
 from pathlib import Path
 from state import GameState
-from menu_state import MainMenuState
+from states.menu_state import MainMenuState
 from game_state import GameplayState
 #from inventory import InventoryState
 #from pause import PauseState
