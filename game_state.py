@@ -1,5 +1,5 @@
 import pygame
-from state import State
+from state import State, GameState
 from player import Player
 from level import Level
 from config.settings import Settings
@@ -46,7 +46,11 @@ class GameplayState:
             self.player.move("left", self.levels[self.current_level])
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.player.move("right", self.levels[self.current_level])
-
+        if keys[pygame.K_l]:  # Simulate level completion
+            self.stats.add_score("Player1", 1000)
+            print("Score added for Player1")
+        if keys[pygame.K_ESCAPE]:
+            self.game.change_state(GameState.MAIN_MENU)
 
     def render(self, screen):
         # Сначала рисуем уровень с учетом позиции игрока

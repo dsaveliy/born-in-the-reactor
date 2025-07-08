@@ -1,0 +1,35 @@
+{
+    "background": "assets/bgs/main_menu.png",
+    "stats_background": "assets/bgs/stats_bg.png",
+    "settings_background": "assets/bgs/settings_bg.png",
+    "help_background": "assets/bgs/help_bg.png",
+    "icons": [
+        {
+            "name": "Settings",
+            "image": "assets/bgs/settings.png",
+            "x": 100,
+            "y": 500,
+            "width": 50,
+            "height": 50,
+            "tooltip": "Press S for Settings"
+        },
+        {
+            "name": "Stats",
+            "image": "assets/bgs/records.png",
+            "x": 400,
+            "y": 500,
+            "width": 50,
+            "height": 50,
+            "tooltip": "Press T for Stats"
+        },
+        {
+            "name": "Help",
+            "image": "assets/bgs/help.png",
+            "x": 700,
+            "y": 500,
+            "width": 50,
+            "height": 50,
+            "tooltip": "Press H for Help"
+        }
+    ]
+}

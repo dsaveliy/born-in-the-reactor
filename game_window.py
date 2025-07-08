@@ -28,7 +28,7 @@ class Game:
     def _init_states(self):
         self.states = {
             GameState.MAIN_MENU: MainMenuState(self),
-            GameState.GAMEPLAY: GameplayState(self),
+            GameState.GAMEPLAY: GameplayState(self)
             #GameState.INVENTORY: InventoryState(self),
             #GameState.PAUSE: PauseState(self),
             #GameState.GAME_OVER: GameOverState(self),

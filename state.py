@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 class GameState(Enum):
     MAIN_MENU = auto()
     GAMEPLAY = auto()
+    STATS = auto()
     INVENTORY = auto()
     PAUSE = auto()
     GAME_OVER = auto()
