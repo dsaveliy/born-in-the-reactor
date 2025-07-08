@@ -2,7 +2,11 @@
   "initial_level": "gomel_streets",
   "player": {
     "initial_health": 100,
-    "initial_ammo": 30
+    "initial_ammo": {
+      "pistol": 30,
+      "rifle": 50,
+      "shotgun": 20
+    }
   },
   "graphics": {
     "resolution": [800, 600],

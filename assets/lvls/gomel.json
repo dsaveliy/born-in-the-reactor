@@ -10,7 +10,9 @@
   ],
   "enemies": [
     {"x": 500, "y": 100, "type": "zombie"},
-    {"x": 600, "y": 300, "type": "zombie"}
+    {"x": 200, "y": 200, "type": "zombie"},
+    {"x": 500, "y": 100, "type": "zombie"},
+    {"x": 700, "y": 700, "type": "zombie"}
   ],
   "objects": [
     {"x": 200, "y": 150, "type": "medkit"},
