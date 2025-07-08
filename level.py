@@ -4,6 +4,8 @@ import logging
 import os
 from typing import Dict, List, Optional
 from enemy import Enemy
+import random
+from typing import List, Dict
 
 class Level:
     def __init__(self, json_file):
@@ -15,6 +17,8 @@ class Level:
         self.obstacles = self.data.get('obstacles', [])
         self.objects = self.data.get('objects', [])
         self.player_spawn = self.data.get('player_spawn', {'x': 400, 'y': 300})
+        self.enemies = [Enemy(e["x"], e["y"]) for e in self.data.get("enemies", [])]
+
         
         # Загрузка фонового изображения
         self.background = None
