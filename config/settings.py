@@ -18,7 +18,7 @@ class Settings:
             print(f"Error loading settings: {e}")
             # Значения по умолчанию
             self.data = {
-                "initial_level": "intro",
+                "initial_level": "gomel_streets",
                 "player": {
                     "initial_health": 100,
                     "initial_ammo": 30

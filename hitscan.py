@@ -6,7 +6,7 @@ class HitscanShot:
         self.start = pygame.Vector2(start_pos)
         self.end = pygame.Vector2(end_pos)
         self.damage = damage
-        self.timer = 0.15  # трейсер будет жить 0.05 сек
+        self.timer = 0.05  # длительность трейсера
 
     def update(self, dt):
         self.timer -= dt
@@ -15,4 +15,5 @@ class HitscanShot:
         return self.timer > 0
 
     def render(self, screen):
-        pygame.draw.line(screen, (255, 255, 204), self.start, self.end, 10)
+        pygame.draw.line(screen, (255, 255, 204), self.start, self.end, 3) # отрисовка выстрела
+        # pass
