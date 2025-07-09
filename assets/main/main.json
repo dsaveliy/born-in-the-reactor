@@ -7,28 +7,28 @@
         {
             "name": "Settings",
             "image": "assets/bgs/settings.png",
-            "x": 100,
-            "y": 500,
-            "width": 50,
-            "height": 50,
-            "tooltip": "Press S for Settings"
+            "x": 130,
+            "y": 450,
+            "width": 70,
+            "height": 70,
+            "tooltip": "Press M for Settings"
         },
         {
             "name": "Stats",
             "image": "assets/bgs/records.png",
-            "x": 400,
-            "y": 500,
-            "width": 50,
-            "height": 50,
+            "x": 370,
+            "y": 450,
+            "width": 90,
+            "height": 70,
             "tooltip": "Press T for Stats"
         },
         {
             "name": "Help",
             "image": "assets/bgs/help.png",
-            "x": 700,
-            "y": 500,
-            "width": 50,
-            "height": 50,
+            "x": 630,
+            "y": 450,
+            "width": 70,
+            "height": 70,
             "tooltip": "Press H for Help"
         }
     ]

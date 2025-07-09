@@ -1,35 +1,60 @@
 import pygame
 import json
-import os
+import math
 from state import State, GameState
-from config.settings import Settings
-from config.stats import Stats
 
 class MainMenuState(State):
     def __init__(self, game):
         super().__init__(game)
-        # Use thin post-apocalyptic font (Orbitron-Light)
         try:
-            self.font = pygame.font.Font("assets/fonts/Orbitron-Light.ttf", 36)
-            self.title_font = pygame.font.Font("assets/fonts/Orbitron-Light.ttf", 48)
+            self.font = pygame.font.Font("assets/fonts/ShareTechMono-Regular.ttf", 32)
+            self.title_font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 48)
         except FileNotFoundError:
-            print("Error loading Orbitron-Light font, using default")
+            print("Error loading fonts, using default")
             self.font = pygame.font.Font(None, 36)
             self.title_font = pygame.font.Font(None, 48)
         
-        self.settings = Settings()
-        self.stats = Stats()
+        # Player sprite properties
+        self.player_x = 400  # Center of screen
+        self.player_y = 300
+        self.player_width = 39
+        self.player_height = 48
+        self.player_speed = 1.5  # Slower speed for menu
+        self.anim_speed = 0.3  # Slower animation for menu
+        self.facing = "right"
+        self.anim_index = 0
+        self.anim_timer = 0
+        self.is_moving = False
+        self.error_message = None  # For displaying errors
+        self.error_timer = 0  # To auto-clear error messages
+
+        # Load player sprites with error handling
+        self.animations = {}
+        sprite_files = {
+            "up": ["assets/player/up_0.png", "assets/player/up_1.png"],
+            "down": ["assets/player/down_0.png", "assets/player/down_1.png"],
+            "left": ["assets/player/left_0.png", "assets/player/left_1.png"],
+            "right": ["assets/player/right_0.png", "assets/player/right_1.png"]
+        }
+        for direction, files in sprite_files.items():
+            self.animations[direction] = []
+            for file in files:
+                try:
+                    sprite = pygame.image.load(file).convert_alpha()
+                    self.animations[direction].append(sprite)
+                except FileNotFoundError:
+                    print(f"Error loading sprite {file}, using placeholder")
+                    self.animations[direction].append(pygame.Surface((self.player_width, self.player_height)))
+                    self.animations[direction][-1].fill((255, 0, 0))  # Red placeholder
+
         self.main_options = ["Play", "Settings", "Stats", "Help", "Exit"]
         self.help_options = ["Description", "Hotkeys", "About", "Back"]
         self.options = self.main_options
         self.selected_option = 0
         self.in_help_menu = False
-        self.show_stats = False
-        self.show_settings = False
         self.message = None
         self.action_triggered = False
 
-        # Load main.json
         try:
             with open("assets/main/main.json", "r") as f:
                 self.config = json.load(f)
@@ -37,13 +62,9 @@ class MainMenuState(State):
             print(f"Error loading main.json: {e}")
             self.config = {
                 "background": "assets/bgs/main_menu.png",
-                "stats_background": "assets/bgs/stats_bg.png",
-                "settings_background": "assets/bgs/settings_bg.png",
-                "help_background": "assets/bgs/help_bg.png",
                 "icons": []
             }
 
-        # Load backgrounds
         try:
             self.main_background = pygame.image.load(self.config["background"]).convert()
             self.main_background = pygame.transform.scale(self.main_background, (800, 600))
@@ -52,31 +73,6 @@ class MainMenuState(State):
             self.main_background = pygame.Surface((800, 600))
             self.main_background.fill((20, 20, 40))
 
-        try:
-            self.stats_background = pygame.image.load(self.config["stats_background"]).convert()
-            self.stats_background = pygame.transform.scale(self.stats_background, (800, 600))
-        except FileNotFoundError:
-            print(f"Error loading stats background {self.config['stats_background']}")
-            self.stats_background = pygame.Surface((800, 600))
-            self.stats_background.fill((50, 50, 50))
-
-        try:
-            self.settings_background = pygame.image.load(self.config["settings_background"]).convert()
-            self.settings_background = pygame.transform.scale(self.settings_background, (800, 600))
-        except FileNotFoundError:
-            print(f"Error loading settings background {self.config['settings_background']}")
-            self.settings_background = pygame.Surface((800, 600))
-            self.settings_background.fill((30, 30, 60))
-
-        try:
-            self.help_background = pygame.image.load(self.config["help_background"]).convert()
-            self.help_background = pygame.transform.scale(self.help_background, (800, 600))
-        except FileNotFoundError:
-            print(f"Error loading help background {self.config['help_background']}")
-            self.help_background = pygame.Surface((800, 600))
-            self.help_background.fill((40, 60, 40))
-
-        # Load icons
         self.icons = []
         for icon in self.config.get("icons", []):
             try:
@@ -86,29 +82,37 @@ class MainMenuState(State):
                     "image": img,
                     "rect": pygame.Rect(icon["x"], icon["y"], icon["width"], icon["height"]),
                     "name": icon["name"],
-                    "tooltip": icon["tooltip"]
+                    "tooltip": icon["tooltip"],
+                    "hover_alpha": 0  # For fade-in effect
                 })
-            except FileNotFoundError:
-                print(f"Error loading icon {icon['image']}")
+            except (FileNotFoundError, KeyError) as e:
+                print(f"Error loading icon {icon.get('image', 'unknown')}: {e}")
 
-        # Green square
-        self.square_pos = [400, 300]
-        self.square_size = 30
-        self.square_speed = 200
-        self.square_rect = pygame.Rect(self.square_pos[0], self.square_pos[1], self.square_size, self.square_size)
+        self.active_icon = None
         self.tooltip = None
+        self.tooltip_alpha = 0  # For tooltip fade-in
+        self.text_pulse = 0  # For pulsing text background
 
     def enter(self):
         print("Entered Main Menu State")
         self.in_help_menu = False
-        self.show_stats = False
-        self.show_settings = False
-        self.options = self.main_options
         self.selected_option = 0
         self.message = None
+        self.error_message = None
+        self.error_timer = 0
         self.action_triggered = False
-        self.square_pos = [400, 300]
+        self.player_x = 400
+        self.player_y = 300
+        self.facing = "right"
+        self.is_moving = False
+        self.anim_index = 0
+        self.anim_timer = 0
         self.tooltip = None
+        self.active_icon = None
+        self.tooltip_alpha = 0
+        self.text_pulse = 0
+        for icon in self.icons:
+            icon["hover_alpha"] = 0
 
     def exit(self):
         print("Exiting Main Menu State")
@@ -118,44 +122,93 @@ class MainMenuState(State):
         mouse_pos = pygame.mouse.get_pos()
         mouse_clicked = pygame.mouse.get_pressed()[0]
 
-        # Move green square (disabled in stats, settings, or help submenu)
-        if not self.show_stats and not self.show_settings and not self.in_help_menu:
+        # Update error message timer
+        if self.error_message:
+            self.error_timer += dt
+            if self.error_timer >= 3.0:  # Clear error after 3 seconds
+                self.error_message = None
+                self.error_timer = 0
+
+        if not self.in_help_menu:
+            # Handle player movement
+            moved = False
             if keys[pygame.K_w] or keys[pygame.K_UP]:
-                self.square_pos[1] -= self.square_speed * dt
+                self.facing = "up"
+                self.player_y -= self.player_speed
+                moved = True
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                self.square_pos[1] += self.square_speed * dt
+                self.facing = "down"
+                self.player_y += self.player_speed
+                moved = True
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                self.square_pos[0] -= self.square_speed * dt
+                self.facing = "left"
+                self.player_x -= self.player_speed
+                moved = True
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                self.square_pos[0] += self.square_speed * dt
+                self.facing = "right"
+                self.player_x += self.player_speed
+                moved = True
 
-            # Constrain to screen bounds
-            self.square_pos[0] = max(0, min(self.square_pos[0], 800 - self.square_size))
-            self.square_pos[1] = max(0, min(self.square_pos[1], 600 - self.square_size))
-            self.square_rect.topleft = self.square_pos
+            # Clamp player position to screen boundaries
+            self.player_x = max(self.player_width / 2, min(self.player_x, 800 - self.player_width / 2))
+            self.player_y = max(self.player_height / 2, min(self.player_y, 600 - self.player_height / 2))
 
-            # Check icon collisions for tooltips (square or mouse)
+            # Update player animation
+            self.is_moving = moved
+            if moved:
+                self.anim_timer += dt
+                if self.anim_timer >= self.anim_speed:
+                    self.anim_index = (self.anim_index + 1) % 2
+                    self.anim_timer = 0
+            else:
+                self.anim_timer += dt
+                if self.anim_timer >= self.anim_speed * 2:  # Slower idle animation
+                    self.anim_index = (self.anim_index + 1) % 2
+                    self.anim_timer = 0
+                if self.anim_timer == 0:
+                    self.anim_index = 0  # Reset to first frame when idle
+
+            # Update tooltip and icon hover effects
             self.tooltip = None
+            self.active_icon = None
+            player_rect = pygame.Rect(
+                self.player_x - self.player_width / 2,
+                self.player_y - self.player_height / 2,
+                self.player_width,
+                self.player_height
+            )
             mouse_rect = pygame.Rect(mouse_pos[0], mouse_pos[1], 1, 1)
             for icon in self.icons:
-                if self.square_rect.colliderect(icon["rect"]) or mouse_rect.colliderect(icon["rect"]):
+                if player_rect.colliderect(icon["rect"]) or mouse_rect.colliderect(icon["rect"]):
                     self.tooltip = icon["tooltip"]
-                    break
+                    self.active_icon = icon
+                    icon["hover_alpha"] = min(icon["hover_alpha"] + 500 * dt, 100)  # Fade in
+                else:
+                    icon["hover_alpha"] = max(icon["hover_alpha"] - 500 * dt, 0)  # Fade out
 
-        # Exit submenus with ESC
-        if self.show_stats or self.show_settings or self.in_help_menu:
-            if keys[pygame.K_ESCAPE] and not self.action_triggered:
-                print(f"Exiting submenu: stats={self.show_stats}, settings={self.show_settings}, help={self.in_help_menu}")
-                self.show_stats = False
-                self.show_settings = False
-                self.in_help_menu = False
-                self.options = self.main_options
-                self.selected_option = 0
-                self.message = None
-                self.tooltip = None
-                self.action_triggered = True
+            # Update tooltip fade-in
+            if self.tooltip:
+                self.tooltip_alpha = min(self.tooltip_alpha + 500 * dt, 255)
+            else:
+                self.tooltip_alpha = max(self.tooltip_alpha - 500 * dt, 0)
+
+            # Update text pulse effect
+            self.text_pulse += dt
+            if self.text_pulse >= 1.0:
+                self.text_pulse = 0
+
+        if self.in_help_menu and keys[pygame.K_ESCAPE] and not self.action_triggered:
+            self.in_help_menu = False
+            self.options = self.main_options
+            self.selected_option = 0
+            self.message = None
+            self.tooltip = None
+            self.active_icon = None
+            self.tooltip_alpha = 0
+            self.error_message = None
+            self.error_timer = 0
+            self.action_triggered = True
         else:
-            # Menu navigation
             if keys[pygame.K_DOWN] and not self.action_triggered:
                 self.selected_option = (self.selected_option + 1) % len(self.options)
                 print(f"Selected option: {self.options[self.selected_option]}")
@@ -163,133 +216,177 @@ class MainMenuState(State):
                 self.selected_option = (self.selected_option - 1) % len(self.options)
                 print(f"Selected option: {self.options[self.selected_option]}")
 
-            # Menu actions (Enter)
             if keys[pygame.K_RETURN] and not self.action_triggered:
                 self.action_triggered = True
                 print(f"Enter pressed, selected_option={self.selected_option}, in_help_menu={self.in_help_menu}")
                 if self.in_help_menu:
-                    if self.selected_option == 0:  # Description
+                    if self.selected_option == 0:
                         self.message = "A post-apocalyptic shooter set in a reactor."
-                    elif self.selected_option == 1:  # Hotkeys
+                    elif self.selected_option == 1:
                         self.message = "WASD/Arrows: Move, Space: Shoot, I: Inventory"
-                    elif self.selected_option == 2:  # About
-                        self.message = "BORN IN THE REACTOR, developed by xAI, 2025"
-                    elif self.selected_option == 3:  # Back
+                    elif self.selected_option == 2:
+                        self.message = "BORN IN THE REACTOR, 2025"
+                    elif self.selected_option == 3:
                         print("Returning to main menu from Help")
                         self.in_help_menu = False
                         self.options = self.main_options
                         self.selected_option = 0
                         self.message = None
                         self.tooltip = None
+                        self.active_icon = None
+                        self.tooltip_alpha = 0
+                        self.error_message = None
+                        self.error_timer = 0
                 else:
-                    if self.selected_option == 0:  # Play
-                        print("Transitioning to GameState.GAMEPLAY")
-                        self.game.change_state(GameState.GAMEPLAY)
-                    elif self.selected_option == 1:  # Settings
-                        self.show_settings = True
-                        self.options = []
-                        current_level = self.settings.get_initial_level()
-                        new_level = "gomel_streets" if current_level == "intro" else "intro"
-                        self.settings.data["initial_level"] = new_level
-                        self.settings.save_settings()
-                        self.message = f"Initial level set to: {new_level}"
-                        print(f"Entered Settings, level set to {new_level}")
-                    elif self.selected_option == 2:  # Stats
-                        self.show_stats = True
-                        self.options = []
-                        self.message = None
-                        print("Entered Stats")
-                    elif self.selected_option == 3:  # Help
+                    if self.selected_option == 0:
+                        try:
+                            if GameState.GAMEPLAY not in self.game.states:
+                                raise ValueError("Gameplay state not initialized")
+                            print("Transitioning to GameState.GAMEPLAY")
+                            self.game.change_state(GameState.GAMEPLAY)
+                            self.error_message = None
+                            self.error_timer = 0
+                        except Exception as e:
+                            print(f"Failed to transition to Gameplay: {type(e).__name__}: {e}")
+                            self.error_message = "Cannot start game: Level not found"
+                            self.error_timer = 0
+                    elif self.selected_option == 1:
+                        print("Transitioning to GameState.SETTINGS")
+                        self.game.change_state(GameState.SETTINGS)
+                        self.error_message = None
+                        self.error_timer = 0
+                    elif self.selected_option == 2:
+                        print("Transitioning to GameState.STATS")
+                        self.game.change_state(GameState.STATS)
+                        self.error_message = None
+                        self.error_timer = 0
+                    elif self.selected_option == 3:
                         self.in_help_menu = True
                         self.options = self.help_options
                         self.selected_option = 0
                         self.message = None
+                        self.active_icon = None
+                        self.tooltip_alpha = 0
+                        self.error_message = None
+                        self.error_timer = 0
                         print("Entered Help")
-                    elif self.selected_option == 4:  # Exit
+                    elif self.selected_option == 4:
                         print("Exiting game")
                         self.game.running = False
-            # Icon-specific actions (keys or mouse click)
+                        self.error_message = None
+                        self.error_timer = 0
             elif self.tooltip and not self.in_help_menu:
-                if (keys[pygame.K_s] or (mouse_clicked and self.tooltip == "Press S for Settings")) and not self.action_triggered:
+                if (keys[pygame.K_m] or (mouse_clicked and self.tooltip == "Press M for Settings")) and not self.action_triggered:
                     self.action_triggered = True
-                    self.show_settings = True
-                    self.options = []
-                    current_level = self.settings.get_initial_level()
-                    new_level = "gomel_streets" if current_level == "intro" else "intro"
-                    self.settings.data["initial_level"] = new_level
-                    self.settings.save_settings()
-                    self.message = f"Initial level set to: {new_level}"
-                    print(f"Entered Settings via icon, level set to {new_level}")
+                    print("Transitioning to GameState.SETTINGS via icon")
+                    self.game.change_state(GameState.SETTINGS)
+                    self.error_message = None
+                    self.error_timer = 0
                 elif (keys[pygame.K_t] or (mouse_clicked and self.tooltip == "Press T for Stats")) and not self.action_triggered:
                     self.action_triggered = True
-                    self.show_stats = True
-                    self.options = []
-                    self.message = None
-                    print("Entered Stats via icon")
+                    print("Transitioning to GameState.STATS via icon")
+                    self.game.change_state(GameState.STATS)
+                    self.error_message = None
+                    self.error_timer = 0
                 elif (keys[pygame.K_h] or (mouse_clicked and self.tooltip == "Press H for Help")) and not self.action_triggered:
                     self.action_triggered = True
                     self.in_help_menu = True
                     self.options = self.help_options
                     self.selected_option = 0
                     self.message = None
+                    self.active_icon = None
+                    self.tooltip_alpha = 0
+                    self.error_message = None
+                    self.error_timer = 0
                     print("Entered Help via icon")
-            # Global quit
             elif keys[pygame.K_q]:
                 print("Exiting game via Q")
                 self.game.running = False
+                self.error_message = None
+                self.error_timer = 0
 
-        # Reset action_triggered when all inputs are released
-        if not keys[pygame.K_RETURN] and not keys[pygame.K_s] and not keys[pygame.K_t] and not keys[pygame.K_h] and not mouse_clicked and not keys[pygame.K_ESCAPE]:
+        if not keys[pygame.K_RETURN] and not keys[pygame.K_m] and not keys[pygame.K_t] and not keys[pygame.K_h] and not mouse_clicked and not keys[pygame.K_ESCAPE]:
             self.action_triggered = False
 
     def render(self, screen):
-        # Select background based on state
-        if self.show_stats:
-            screen.blit(self.stats_background, (0, 0))
-        elif self.show_settings:
-            screen.blit(self.settings_background, (0, 0))
-        elif self.in_help_menu:
-            screen.blit(self.help_background, (0, 0))
-        else:
-            screen.blit(self.main_background, (0, 0))
+        # Calculate pulse_alpha for all rendering blocks
+        pulse_alpha = 180 + int(30 * (1 + math.sin(self.text_pulse * math.pi)) / 2)  # Pulse between 180-210
 
-        # Title at top (main menu only)
-        if not self.show_stats and not self.show_settings and not self.in_help_menu:
+        screen.blit(self.main_background, (0, 0))
+        if not self.in_help_menu:
+            # Render title
             title = self.title_font.render("BORN IN THE REACTOR", True, (255, 255, 255))
             screen.blit(title, (400 - title.get_width() // 2, 10))
+            
+            # Render "Press Enter to play" with pulsing background
+            play_text = self.font.render("Press Enter to play", True, (255, 255, 255))
+            play_rect = play_text.get_rect(center=(400, 100))
+            background_rect = play_rect.inflate(20, 10)
+            pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+            screen.blit(play_text, play_rect)
 
-            # "Press enter to play"
-            play_text = self.font.render("Press enter to play", True, (255, 255, 255))
-            screen.blit(play_text, (400 - play_text.get_width() // 2, 80))
-
-            # Render icons
+            # Render icons with hover effect and tooltips
             for icon in self.icons:
-                screen.blit(icon["image"], icon["rect"].topleft)
+                icon_surface = icon["image"].copy()
+                if icon["hover_alpha"] > 0:
+                    # Add glow effect by drawing a semi-transparent white rect
+                    glow_surface = pygame.Surface((icon["rect"].width + 10, icon["rect"].height + 10), pygame.SRCALPHA)
+                    pygame.draw.rect(glow_surface, (255, 255, 255, int(icon["hover_alpha"])), glow_surface.get_rect())
+                    screen.blit(glow_surface, (icon["rect"].x - 5, icon["rect"].y - 5))
+                screen.blit(icon_surface, icon["rect"].topleft)
+                if self.active_icon == icon and self.tooltip_alpha > 0:
+                    tooltip_text = self.font.render(icon["tooltip"], True, (255, 255, 255))
+                    tooltip_text.set_alpha(int(self.tooltip_alpha))
+                    tooltip_rect = tooltip_text.get_rect(center=(icon["rect"].x + icon["rect"].width / 2, icon["rect"].y - 30))
+                    tooltip_bg_rect = tooltip_rect.inflate(10, 5)
+                    tooltip_bg = pygame.Surface(tooltip_bg_rect.size, pygame.SRCALPHA)
+                    tooltip_bg.fill((0, 0, 0, int(self.tooltip_alpha * 0.7)))
+                    screen.blit(tooltip_bg, tooltip_bg_rect)
+                    screen.blit(tooltip_text, tooltip_rect)
 
-            # Render green square
-            pygame.draw.rect(screen, (0, 255, 0), self.square_rect)
+            # Render player sprite
+            sprite = self.animations[self.facing][self.anim_index]
+            scaled_sprite = pygame.transform.scale(sprite, (self.player_width, self.player_height))
+            draw_pos = (self.player_x - self.player_width // 2, self.player_y - self.player_height // 2)
+            screen.blit(scaled_sprite, draw_pos)
 
-            # Render tooltip
-            if self.tooltip:
-                tooltip_text = self.font.render(self.tooltip, True, (255, 255, 255))
-                screen.blit(tooltip_text, (400 - tooltip_text.get_width() // 2, 240))
+            # Render "Press Q to quit" with pulsing background
+            quit_text = self.font.render("Press Q to quit", True, (255, 255, 255))
+            quit_rect = quit_text.get_rect(center=(400, 570))
+            background_rect = quit_rect.inflate(20, 10)
+            pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+            screen.blit(quit_text, quit_rect)
 
-        # Render help submenu
+            # Render error message if any
+            if self.error_message:
+                error_text = self.font.render(self.error_message, True, (255, 50, 50))
+                error_rect = error_text.get_rect(center=(400, 100))
+                error_bg_rect = error_rect.inflate(20, 10)
+                pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+                screen.blit(error_text, error_rect)
+
         if self.in_help_menu:
+            try:
+                help_background = pygame.image.load(self.config.get("help_background", "assets/bgs/help_bg.png")).convert()
+                help_background = pygame.transform.scale(help_background, (800, 600))
+                screen.blit(help_background, (0, 0))
+            except FileNotFoundError:
+                print("Error loading help background")
+                help_background = pygame.Surface((800, 600))
+                help_background.fill((40, 60, 40))
+                screen.blit(help_background, (0, 0))
             for i, option in enumerate(self.options):
                 color = (255, 255, 255) if i != self.selected_option else (255, 200, 0)
                 text = self.font.render(option, True, color)
                 screen.blit(text, (400 - text.get_width() // 2, 150 + i * 50))
 
-        # Render message (Settings or Help)
-        if self.message and (self.show_settings or self.in_help_menu):
+        if self.message and self.in_help_menu:
             message_text = self.font.render(self.message, True, (255, 255, 255))
             screen.blit(message_text, (400 - message_text.get_width() // 2, 240))
 
-        # "Press Q to quit" (main menu) or "Press ESC to return" (submenus)
-        if self.show_stats or self.show_settings or self.in_help_menu:
+        if self.in_help_menu:
             return_text = self.font.render("Press ESC to return", True, (255, 255, 255))
-            screen.blit(return_text, (400 - return_text.get_width() // 2, 540))
-        else:
-            quit_text = self.font.render("Press Q to quit", True, (255, 255, 255))
-            screen.blit(quit_text, (400 - quit_text.get_width() // 2, 570))
+            return_rect = return_text.get_rect(center=(400, 540))
+            background_rect = return_rect.inflate(20, 10)
+            pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+            screen.blit(return_text, return_rect)
