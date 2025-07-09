@@ -1,0 +1,9 @@
+{
+    "player_spawn": {
+        "x": 400,
+        "y": 300
+    },
+    "tiles": [],
+    "enemies": [],
+    "transition_zone": null
+}

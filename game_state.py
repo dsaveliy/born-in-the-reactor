@@ -2,7 +2,7 @@ import pygame
 from state import State, GameState
 from player import Player
 from level import Level
-from config.settings import Settings
+from settings_state import SettingsState
 from weapon import Weapon, WeaponType
 from hitscan import HitscanShot
 from effects import DamageEffect
@@ -10,10 +10,9 @@ from effects import DamageEffect
 class GameplayState:
     def __init__(self, game):
         self.game = game
-        # выгрузка настроек
-        self.settings = Settings() # подключение настроек
-        self.current_level = self.settings.get_initial_level() # загрузка последнего уровня
-        player_settings = self.settings.get_player_settings() # получение данных игрока
+        self.settings = SettingsState(game)  # Create a temporary SettingsState instance
+        self.current_level = self.settings.get_initial_level()
+        player_settings = self.settings.get_player_settings()
         self.levels = { # загрузка уровней
             "gomel_streets": Level("assets/lvls/gomel.json"),
         }
