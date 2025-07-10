@@ -7,8 +7,8 @@
         {
             "name": "Settings",
             "image": "assets/bgs/settings.png",
-            "x": 130,
-            "y": 450,
+            "x": 620,
+            "y": 60,
             "width": 70,
             "height": 70,
             "tooltip": "Press M for Settings"
@@ -16,7 +16,7 @@
         {
             "name": "Stats",
             "image": "assets/bgs/records.png",
-            "x": 370,
+            "x": 200,
             "y": 450,
             "width": 90,
             "height": 70,
@@ -25,8 +25,8 @@
         {
             "name": "Help",
             "image": "assets/bgs/help.png",
-            "x": 550,
-            "y": 420,
+            "x": 390,
+            "y": 390,
             "width": 235,
             "height": 170,
             "tooltip": "Press H for Help"

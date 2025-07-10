@@ -8,10 +8,10 @@ class SettingsState(State):
     def __init__(self, game):
         super().__init__(game)
         try:
-            self.font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 36)
+            self.font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 24)
         except FileNotFoundError:
             print("Error loading Orbitron-Light font, using default")
-            self.font = pygame.font.Font(None, 36)
+            self.font = pygame.font.Font(None, 24)
         
         self.load_settings()
         self.message = None
@@ -35,9 +35,17 @@ class SettingsState(State):
                 print(f"Invalid initial_level '{self.data.get('initial_level')}', resetting to 'gomel_streets'")
                 self.data["initial_level"] = "gomel_streets"
                 self.save_settings(file_path)
-            # Ensure sound_enabled exists
+            # Ensure required settings exist
             if "sound_enabled" not in self.data:
                 self.data["sound_enabled"] = True
+            if "player" not in self.data:
+                self.data["player"] = {}
+            if "health_damage_effect" not in self.data["player"]:
+                self.data["player"]["health_damage_effect"] = True
+            if "aim_line" not in self.data["player"]:
+                self.data["player"]["aim_line"] = False
+            if "shot_animation" not in self.data["player"]:
+                self.data["player"]["shot_animation"] = True
                 self.save_settings(file_path)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading settings: {e}")
@@ -51,7 +59,9 @@ class SettingsState(State):
                         "rifle": 50,
                         "shotgun": 20
                     },
-                    "inventory": ["rifle", "medkit"]
+                    "health_damage_effect": True,
+                    "aim_line": False,
+                    "shot_animation": True
                 }
             }
             self.save_settings(file_path)
@@ -92,10 +102,52 @@ class SettingsState(State):
         if keys[pygame.K_ESCAPE] and not self.action_triggered:
             self.game.change_state(GameState.MAIN_MENU)
             self.action_triggered = True
-        elif (keys[pygame.K_SPACE] or (mouse_clicked and 350 <= mouse_pos[1] <= 400 and 300 <= mouse_pos[0] <= 500)) and not self.action_triggered:
+
+        # Dynamically calculate rectangles for click detection
+        # Sound
+        sound_label = self.font.render("Sound", True, (255, 255, 255))
+        sound_label_rect = sound_label.get_rect(center=(300, 175))
+        sound_status = self.font.render("ON" if self.data["sound_enabled"] else "OFF", True, (255, 255, 255))
+        sound_status_rect = sound_status.get_rect(center=(300, 225))
+        # Health Damage Effect
+        health_effect_label = self.font.render("Health Damage Effect", True, (255, 255, 255))
+        health_effect_label_rect = health_effect_label.get_rect(center=(550, 175))
+        health_effect_status = self.font.render("ON" if self.data["player"]["health_damage_effect"] else "OFF", True, (255, 255, 255))
+        health_effect_status_rect = health_effect_status.get_rect(center=(550, 225))
+        # Aiming Line
+        aim_line_label = self.font.render("Aiming Line", True, (255, 255, 255))
+        aim_line_label_rect = aim_line_label.get_rect(center=(300, 325))
+        aim_line_status = self.font.render("ON" if self.data["player"]["aim_line"] else "OFF", True, (255, 255, 255))
+        aim_line_status_rect = aim_line_status.get_rect(center=(300, 375))
+        # Shot Animation
+        shot_anim_label = self.font.render("Shot Animation", True, (255, 255, 255))
+        shot_anim_label_rect = shot_anim_label.get_rect(center=(550, 325))
+        shot_anim_status = self.font.render("ON" if self.data["player"]["shot_animation"] else "OFF", True, (255, 255, 255))
+        shot_anim_status_rect = shot_anim_status.get_rect(center=(550, 375))
+
+        # Sound toggle
+        if (keys[pygame.K_SPACE] or (mouse_clicked and (sound_label_rect.collidepoint(mouse_pos) or sound_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
             self.data["sound_enabled"] = not self.data["sound_enabled"]
             self.save_settings()
             print(f"Sound toggled to: {self.data['sound_enabled']}")
+            self.action_triggered = True
+        # Health Damage Effect toggle
+        elif (keys[pygame.K_SPACE] or (mouse_clicked and (health_effect_label_rect.collidepoint(mouse_pos) or health_effect_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
+            self.data["player"]["health_damage_effect"] = not self.data["player"]["health_damage_effect"]
+            self.save_settings()
+            print(f"Health Damage Effect toggled to: {self.data['player']['health_damage_effect']}")
+            self.action_triggered = True
+        # Aiming Line toggle
+        elif (keys[pygame.K_SPACE] or (mouse_clicked and (aim_line_label_rect.collidepoint(mouse_pos) or aim_line_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
+            self.data["player"]["aim_line"] = not self.data["player"]["aim_line"]
+            self.save_settings()
+            print(f"Aiming Line toggled to: {self.data['player']['aim_line']}")
+            self.action_triggered = True
+        # Shot Animation toggle
+        elif (keys[pygame.K_SPACE] or (mouse_clicked and (shot_anim_label_rect.collidepoint(mouse_pos) or shot_anim_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
+            self.data["player"]["shot_animation"] = not self.data["player"]["shot_animation"]
+            self.save_settings()
+            print(f"Shot Animation toggled to: {self.data['player']['shot_animation']}")
             self.action_triggered = True
 
         if not keys[pygame.K_ESCAPE] and not keys[pygame.K_SPACE] and not mouse_clicked:
@@ -115,44 +167,67 @@ class SettingsState(State):
         screen.blit(title_text, title_rect)
 
         # Render initial level
-        level_text = self.font.render(f"Initial level: {self.get_initial_level()}", True, (255, 255, 255))
-        level_rect = level_text.get_rect(center=(400, 150))
+        level_text = self.font.render(f"Initial Level: {self.get_initial_level()}", True, (255, 255, 255))
+        level_rect = level_text.get_rect(center=(400, 100))
         level_bg_rect = level_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), level_bg_rect)
         screen.blit(level_text, level_rect)
 
-        # Render inventory
-        inventory = self.data.get("player", {}).get("inventory", [])
-        inventory_text = f"Inventory: {', '.join(inventory) if inventory else 'Empty'}"
-        inv_text = self.font.render(inventory_text, True, (255, 255, 255))
-        inv_rect = inv_text.get_rect(center=(400, 230))
-        inv_bg_rect = inv_rect.inflate(20, 10)
-        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), inv_bg_rect)
-        screen.blit(inv_text, inv_rect)
-
-        # Render sound (two lines)
+        # Render sound (left column)
         sound_label = self.font.render("Sound", True, (255, 255, 255))
-        sound_label_rect = sound_label.get_rect(center=(400, 310))
+        sound_label_rect = sound_label.get_rect(center=(300, 175))
         sound_label_bg_rect = sound_label_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), sound_label_bg_rect)
         screen.blit(sound_label, sound_label_rect)
 
         sound_status = self.font.render("ON" if self.data["sound_enabled"] else "OFF", True, (255, 255, 255))
-        sound_status_rect = sound_status.get_rect(center=(400, 360))
+        sound_status_rect = sound_status.get_rect(center=(300, 225))
         sound_status_bg_rect = sound_status_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), sound_status_bg_rect)
         screen.blit(sound_status, sound_status_rect)
 
+        # Render health damage effect (right column)
+        health_effect_label = self.font.render("Health Damage Effect", True, (255, 255, 255))
+        health_effect_label_rect = health_effect_label.get_rect(center=(550, 175))
+        health_effect_bg_rect = health_effect_label_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), health_effect_bg_rect)
+        screen.blit(health_effect_label, health_effect_label_rect)
+
+        health_effect_status = self.font.render("ON" if self.data["player"]["health_damage_effect"] else "OFF", True, (255, 255, 255))
+        health_effect_status_rect = health_effect_status.get_rect(center=(550, 225))
+        health_effect_status_bg_rect = health_effect_status_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), health_effect_status_bg_rect)
+        screen.blit(health_effect_status, health_effect_status_rect)
+
+        # Render aiming line (left column)
+        aim_line_label = self.font.render("Aiming Line", True, (255, 255, 255))
+        aim_line_label_rect = aim_line_label.get_rect(center=(300, 325))
+        aim_line_bg_rect = aim_line_label_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), aim_line_bg_rect)
+        screen.blit(aim_line_label, aim_line_label_rect)
+
+        aim_line_status = self.font.render("ON" if self.data["player"]["aim_line"] else "OFF", True, (255, 255, 255))
+        aim_line_status_rect = aim_line_status.get_rect(center=(300, 375))
+        aim_line_status_bg_rect = aim_line_status_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), aim_line_status_bg_rect)
+        screen.blit(aim_line_status, aim_line_status_rect)
+
+        # Render shot animation (right column)
+        shot_anim_label = self.font.render("Shot Animation", True, (255, 255, 255))
+        shot_anim_label_rect = shot_anim_label.get_rect(center=(550, 325))
+        shot_anim_bg_rect = shot_anim_label_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), shot_anim_bg_rect)
+        screen.blit(shot_anim_label, shot_anim_label_rect)
+
+        shot_anim_status = self.font.render("ON" if self.data["player"]["shot_animation"] else "OFF", True, (255, 255, 255))
+        shot_anim_status_rect = shot_anim_status.get_rect(center=(550, 375))
+        shot_anim_status_bg_rect = shot_anim_status_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), shot_anim_status_bg_rect)
+        screen.blit(shot_anim_status, shot_anim_status_rect)
+
         # Render return prompt
         return_text = self.font.render("Press ESC to return to menu", True, (255, 255, 255))
-        return_rect = return_text.get_rect(center=(400, 530))
+        return_rect = return_text.get_rect(center=(400, 500))
         return_bg_rect = return_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), return_bg_rect)
         screen.blit(return_text, return_rect)
-
-        # Render back to game prompt
-        back_text = self.font.render("Press B to return to game", True, (255, 255, 255))
-        back_rect = back_text.get_rect(center=(400, 560))
-        back_bg_rect = back_rect.inflate(20, 10)
-        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), back_bg_rect)
-        screen.blit(back_text, back_rect)

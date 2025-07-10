@@ -27,6 +27,7 @@ class MainMenuState(State):
         self.is_moving = False
         self.error_message = None  # For displaying errors
         self.error_timer = 0  # To auto-clear error messages
+        self.action_cooldown = 0  # Prevent immediate input after state entry
 
         # Load player sprites with error handling
         self.animations = {}
@@ -105,13 +106,22 @@ class MainMenuState(State):
         self.active_icon = None
         self.tooltip_alpha = 0
         self.text_pulse = 0
+        self.action_cooldown = 0.2  # 0.2s cooldown to ignore immediate inputs
+        pygame.event.clear()  # Clear event queue
+        pygame.key.get_pressed()  # Flush keyboard state
         for icon in self.icons:
             icon["hover_alpha"] = 0
 
     def exit(self):
         print("Exiting Main Menu State")
+        pygame.event.clear()  # Clear event queue on exit
 
     def update(self, dt):
+        # Update action cooldown
+        if self.action_cooldown > 0:
+            self.action_cooldown -= dt
+            return  # Skip input processing during cooldown
+
         keys = pygame.key.get_pressed()
         mouse_pos = pygame.mouse.get_pos()
         mouse_clicked = pygame.mouse.get_pressed()[0]
@@ -193,9 +203,11 @@ class MainMenuState(State):
         if keys[pygame.K_DOWN] and not self.action_triggered:
             self.selected_option = (self.selected_option + 1) % len(self.options)
             print(f"Selected option: {self.options[self.selected_option]}")
+            self.action_triggered = True
         if keys[pygame.K_UP] and not self.action_triggered:
             self.selected_option = (self.selected_option - 1) % len(self.options)
             print(f"Selected option: {self.options[self.selected_option]}")
+            self.action_triggered = True
 
         if keys[pygame.K_RETURN] and not self.action_triggered:
             self.action_triggered = True
@@ -257,7 +269,7 @@ class MainMenuState(State):
             self.error_message = None
             self.error_timer = 0
 
-        if not keys[pygame.K_RETURN] and not keys[pygame.K_m] and not keys[pygame.K_t] and not keys[pygame.K_h] and not mouse_clicked and not keys[pygame.K_ESCAPE]:
+        if not keys[pygame.K_RETURN] and not keys[pygame.K_m] and not keys[pygame.K_t] and not keys[pygame.K_h] and not mouse_clicked and not keys[pygame.K_ESCAPE] and not keys[pygame.K_DOWN] and not keys[pygame.K_UP]:
             self.action_triggered = False
 
     def render(self, screen):
