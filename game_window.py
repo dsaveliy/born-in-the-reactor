@@ -6,6 +6,7 @@ from menu_state import MainMenuState
 from game_state import GameplayState
 from settings_state import SettingsState
 from stats_state import StatsState
+from help_state import HelpState
 #from pause import PauseState
 #from game_over import GameOverState
 #from level_transition import LevelTransitionState
@@ -31,7 +32,8 @@ class Game:
             GameState.MAIN_MENU: MainMenuState(self),
             GameState.GAMEPLAY: GameplayState(self),
             GameState.STATS: StatsState(self),
-            GameState.SETTINGS: SettingsState(self)
+            GameState.SETTINGS: SettingsState(self),
+            GameState.HELP: HelpState(self)
             #GameState.INVENTORY: InventoryState(self),
             #GameState.PAUSE: PauseState(self),
             #GameState.GAME_OVER: GameOverState(self),

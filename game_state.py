@@ -26,7 +26,6 @@ class GameplayState:
         )
         self.tracers = []
 
-
     def update(self, dt):
         # действия на клавиатуре
         # движение

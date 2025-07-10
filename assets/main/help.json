@@ -1,0 +1,21 @@
+{
+    "background": "assets/bgs/help_bg.png",
+    "options": [
+        {
+            "name": "Description",
+            "message": "A post-apocalyptic shooter set in a reactor."
+        },
+        {
+            "name": "Hotkeys",
+            "message": "WASD/Arrows: Move, Space: Shoot, I: Inventory"
+        },
+        {
+            "name": "About",
+            "message": "BORN IN THE REACTOR, 2025"
+        },
+        {
+            "name": "Back",
+            "message": ""
+        }
+    ]
+}

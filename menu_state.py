@@ -47,12 +47,8 @@ class MainMenuState(State):
                     self.animations[direction].append(pygame.Surface((self.player_width, self.player_height)))
                     self.animations[direction][-1].fill((255, 0, 0))  # Red placeholder
 
-        self.main_options = ["Play", "Settings", "Stats", "Help", "Exit"]
-        self.help_options = ["Description", "Hotkeys", "About", "Back"]
-        self.options = self.main_options
+        self.options = ["Play", "Settings", "Stats", "Help", "Exit"]
         self.selected_option = 0
-        self.in_help_menu = False
-        self.message = None
         self.action_triggered = False
 
         try:
@@ -95,9 +91,7 @@ class MainMenuState(State):
 
     def enter(self):
         print("Entered Main Menu State")
-        self.in_help_menu = False
         self.selected_option = 0
-        self.message = None
         self.error_message = None
         self.error_timer = 0
         self.action_triggered = False
@@ -129,181 +123,139 @@ class MainMenuState(State):
                 self.error_message = None
                 self.error_timer = 0
 
-        if not self.in_help_menu:
-            # Handle player movement
-            moved = False
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
-                self.facing = "up"
-                self.player_y -= self.player_speed
-                moved = True
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                self.facing = "down"
-                self.player_y += self.player_speed
-                moved = True
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                self.facing = "left"
-                self.player_x -= self.player_speed
-                moved = True
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                self.facing = "right"
-                self.player_x += self.player_speed
-                moved = True
+        # Handle player movement
+        moved = False
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            self.facing = "up"
+            self.player_y -= self.player_speed
+            moved = True
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            self.facing = "down"
+            self.player_y += self.player_speed
+            moved = True
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            self.facing = "left"
+            self.player_x -= self.player_speed
+            moved = True
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            self.facing = "right"
+            self.player_x += self.player_speed
+            moved = True
 
-            # Clamp player position to screen boundaries
-            self.player_x = max(self.player_width / 2, min(self.player_x, 800 - self.player_width / 2))
-            self.player_y = max(self.player_height / 2, min(self.player_y, 600 - self.player_height / 2))
+        # Clamp player position to screen boundaries
+        self.player_x = max(self.player_width / 2, min(self.player_x, 800 - self.player_width / 2))
+        self.player_y = max(self.player_height / 2, min(self.player_y, 600 - self.player_height / 2))
 
-            # Update player animation
-            self.is_moving = moved
-            if moved:
-                self.anim_timer += dt
-                if self.anim_timer >= self.anim_speed:
-                    self.anim_index = (self.anim_index + 1) % 2
-                    self.anim_timer = 0
-            else:
-                self.anim_timer += dt
-                if self.anim_timer >= self.anim_speed * 2:  # Slower idle animation
-                    self.anim_index = (self.anim_index + 1) % 2
-                    self.anim_timer = 0
-                if self.anim_timer == 0:
-                    self.anim_index = 0  # Reset to first frame when idle
-
-            # Update tooltip and icon hover effects
-            self.tooltip = None
-            self.active_icon = None
-            player_rect = pygame.Rect(
-                self.player_x - self.player_width / 2,
-                self.player_y - self.player_height / 2,
-                self.player_width,
-                self.player_height
-            )
-            mouse_rect = pygame.Rect(mouse_pos[0], mouse_pos[1], 1, 1)
-            for icon in self.icons:
-                if player_rect.colliderect(icon["rect"]) or mouse_rect.colliderect(icon["rect"]):
-                    self.tooltip = icon["tooltip"]
-                    self.active_icon = icon
-                    icon["hover_alpha"] = min(icon["hover_alpha"] + 500 * dt, 100)  # Fade in
-                else:
-                    icon["hover_alpha"] = max(icon["hover_alpha"] - 500 * dt, 0)  # Fade out
-
-            # Update tooltip fade-in
-            if self.tooltip:
-                self.tooltip_alpha = min(self.tooltip_alpha + 500 * dt, 255)
-            else:
-                self.tooltip_alpha = max(self.tooltip_alpha - 500 * dt, 0)
-
-            # Update text pulse effect
-            self.text_pulse += dt
-            if self.text_pulse >= 1.0:
-                self.text_pulse = 0
-
-        if self.in_help_menu and keys[pygame.K_ESCAPE] and not self.action_triggered:
-            self.in_help_menu = False
-            self.options = self.main_options
-            self.selected_option = 0
-            self.message = None
-            self.tooltip = None
-            self.active_icon = None
-            self.tooltip_alpha = 0
-            self.error_message = None
-            self.error_timer = 0
-            self.action_triggered = True
+        # Update player animation
+        self.is_moving = moved
+        if moved:
+            self.anim_timer += dt
+            if self.anim_timer >= self.anim_speed:
+                self.anim_index = (self.anim_index + 1) % 2
+                self.anim_timer = 0
         else:
-            if keys[pygame.K_DOWN] and not self.action_triggered:
-                self.selected_option = (self.selected_option + 1) % len(self.options)
-                print(f"Selected option: {self.options[self.selected_option]}")
-            if keys[pygame.K_UP] and not self.action_triggered:
-                self.selected_option = (self.selected_option - 1) % len(self.options)
-                print(f"Selected option: {self.options[self.selected_option]}")
+            self.anim_timer += dt
+            if self.anim_timer >= self.anim_speed * 2:  # Slower idle animation
+                self.anim_index = (self.anim_index + 1) % 2
+                self.anim_timer = 0
+            if self.anim_timer == 0:
+                self.anim_index = 0  # Reset to first frame when idle
 
-            if keys[pygame.K_RETURN] and not self.action_triggered:
-                self.action_triggered = True
-                print(f"Enter pressed, selected_option={self.selected_option}, in_help_menu={self.in_help_menu}")
-                if self.in_help_menu:
-                    if self.selected_option == 0:
-                        self.message = "A post-apocalyptic shooter set in a reactor."
-                    elif self.selected_option == 1:
-                        self.message = "WASD/Arrows: Move, Space: Shoot, I: Inventory"
-                    elif self.selected_option == 2:
-                        self.message = "BORN IN THE REACTOR, 2025"
-                    elif self.selected_option == 3:
-                        print("Returning to main menu from Help")
-                        self.in_help_menu = False
-                        self.options = self.main_options
-                        self.selected_option = 0
-                        self.message = None
-                        self.tooltip = None
-                        self.active_icon = None
-                        self.tooltip_alpha = 0
-                        self.error_message = None
-                        self.error_timer = 0
-                else:
-                    if self.selected_option == 0:
-                        try:
-                            if GameState.GAMEPLAY not in self.game.states:
-                                raise ValueError("Gameplay state not initialized")
-                            print("Transitioning to GameState.GAMEPLAY")
-                            self.game.change_state(GameState.GAMEPLAY)
-                            self.error_message = None
-                            self.error_timer = 0
-                        except Exception as e:
-                            print(f"Failed to transition to Gameplay: {type(e).__name__}: {e}")
-                            self.error_message = "Cannot start game: Level not found"
-                            self.error_timer = 0
-                    elif self.selected_option == 1:
-                        print("Transitioning to GameState.SETTINGS")
-                        self.game.change_state(GameState.SETTINGS)
-                        self.error_message = None
-                        self.error_timer = 0
-                    elif self.selected_option == 2:
-                        print("Transitioning to GameState.STATS")
-                        self.game.change_state(GameState.STATS)
-                        self.error_message = None
-                        self.error_timer = 0
-                    elif self.selected_option == 3:
-                        self.in_help_menu = True
-                        self.options = self.help_options
-                        self.selected_option = 0
-                        self.message = None
-                        self.active_icon = None
-                        self.tooltip_alpha = 0
-                        self.error_message = None
-                        self.error_timer = 0
-                        print("Entered Help")
-                    elif self.selected_option == 4:
-                        print("Exiting game")
-                        self.game.running = False
-                        self.error_message = None
-                        self.error_timer = 0
-            elif self.tooltip and not self.in_help_menu:
-                if (keys[pygame.K_m] or (mouse_clicked and self.tooltip == "Press M for Settings")) and not self.action_triggered:
-                    self.action_triggered = True
-                    print("Transitioning to GameState.SETTINGS via icon")
-                    self.game.change_state(GameState.SETTINGS)
+        # Update tooltip and icon hover effects
+        self.tooltip = None
+        self.active_icon = None
+        player_rect = pygame.Rect(
+            self.player_x - self.player_width / 2,
+            self.player_y - self.player_height / 2,
+            self.player_width,
+            self.player_height
+        )
+        mouse_rect = pygame.Rect(mouse_pos[0], mouse_pos[1], 1, 1)
+        for icon in self.icons:
+            if player_rect.colliderect(icon["rect"]) or mouse_rect.colliderect(icon["rect"]):
+                self.tooltip = icon["tooltip"]
+                self.active_icon = icon
+                icon["hover_alpha"] = min(icon["hover_alpha"] + 500 * dt, 100)  # Fade in
+            else:
+                icon["hover_alpha"] = max(icon["hover_alpha"] - 500 * dt, 0)  # Fade out
+
+        # Update tooltip fade-in
+        if self.tooltip:
+            self.tooltip_alpha = min(self.tooltip_alpha + 500 * dt, 255)
+        else:
+            self.tooltip_alpha = max(self.tooltip_alpha - 500 * dt, 0)
+
+        # Update text pulse effect
+        self.text_pulse += dt
+        if self.text_pulse >= 1.0:
+            self.text_pulse = 0
+
+        if keys[pygame.K_DOWN] and not self.action_triggered:
+            self.selected_option = (self.selected_option + 1) % len(self.options)
+            print(f"Selected option: {self.options[self.selected_option]}")
+        if keys[pygame.K_UP] and not self.action_triggered:
+            self.selected_option = (self.selected_option - 1) % len(self.options)
+            print(f"Selected option: {self.options[self.selected_option]}")
+
+        if keys[pygame.K_RETURN] and not self.action_triggered:
+            self.action_triggered = True
+            print(f"Enter pressed, selected_option={self.selected_option}")
+            if self.selected_option == 0:
+                try:
+                    if GameState.GAMEPLAY not in self.game.states:
+                        raise ValueError("Gameplay state not initialized")
+                    print("Transitioning to GameState.GAMEPLAY")
+                    self.game.change_state(GameState.GAMEPLAY)
                     self.error_message = None
                     self.error_timer = 0
-                elif (keys[pygame.K_t] or (mouse_clicked and self.tooltip == "Press T for Stats")) and not self.action_triggered:
-                    self.action_triggered = True
-                    print("Transitioning to GameState.STATS via icon")
-                    self.game.change_state(GameState.STATS)
-                    self.error_message = None
+                except Exception as e:
+                    print(f"Failed to transition to Gameplay: {type(e).__name__}: {e}")
+                    self.error_message = "Cannot start game: Level not found"
                     self.error_timer = 0
-                elif (keys[pygame.K_h] or (mouse_clicked and self.tooltip == "Press H for Help")) and not self.action_triggered:
-                    self.action_triggered = True
-                    self.in_help_menu = True
-                    self.options = self.help_options
-                    self.selected_option = 0
-                    self.message = None
-                    self.active_icon = None
-                    self.tooltip_alpha = 0
-                    self.error_message = None
-                    self.error_timer = 0
-                    print("Entered Help via icon")
-            elif keys[pygame.K_q]:
-                print("Exiting game via Q")
+            elif self.selected_option == 1:
+                print("Transitioning to GameState.SETTINGS")
+                self.game.change_state(GameState.SETTINGS)
+                self.error_message = None
+                self.error_timer = 0
+            elif self.selected_option == 2:
+                print("Transitioning to GameState.STATS")
+                self.game.change_state(GameState.STATS)
+                self.error_message = None
+                self.error_timer = 0
+            elif self.selected_option == 3:
+                print("Transitioning to GameState.HELP")
+                self.game.change_state(GameState.HELP)
+                self.error_message = None
+                self.error_timer = 0
+            elif self.selected_option == 4:
+                print("Exiting game")
                 self.game.running = False
                 self.error_message = None
                 self.error_timer = 0
+        elif self.tooltip:
+            if (keys[pygame.K_m] or (mouse_clicked and self.tooltip == "Press M for Settings")) and not self.action_triggered:
+                self.action_triggered = True
+                print("Transitioning to GameState.SETTINGS via icon")
+                self.game.change_state(GameState.SETTINGS)
+                self.error_message = None
+                self.error_timer = 0
+            elif (keys[pygame.K_t] or (mouse_clicked and self.tooltip == "Press T for Stats")) and not self.action_triggered:
+                self.action_triggered = True
+                print("Transitioning to GameState.STATS via icon")
+                self.game.change_state(GameState.STATS)
+                self.error_message = None
+                self.error_timer = 0
+            elif (keys[pygame.K_h] or (mouse_clicked and self.tooltip == "Press H for Help")) and not self.action_triggered:
+                self.action_triggered = True
+                print("Transitioning to GameState.HELP via icon")
+                self.game.change_state(GameState.HELP)
+                self.error_message = None
+                self.error_timer = 0
+        elif keys[pygame.K_q]:
+            print("Exiting game via Q")
+            self.game.running = False
+            self.error_message = None
+            self.error_timer = 0
 
         if not keys[pygame.K_RETURN] and not keys[pygame.K_m] and not keys[pygame.K_t] and not keys[pygame.K_h] and not mouse_clicked and not keys[pygame.K_ESCAPE]:
             self.action_triggered = False
@@ -313,80 +265,53 @@ class MainMenuState(State):
         pulse_alpha = 180 + int(30 * (1 + math.sin(self.text_pulse * math.pi)) / 2)  # Pulse between 180-210
 
         screen.blit(self.main_background, (0, 0))
-        if not self.in_help_menu:
-            # Render title
-            title = self.title_font.render("BORN IN THE REACTOR", True, (255, 255, 255))
-            screen.blit(title, (400 - title.get_width() // 2, 10))
-            
-            # Render "Press Enter to play" with pulsing background
-            play_text = self.font.render("Press Enter to play", True, (255, 255, 255))
-            play_rect = play_text.get_rect(center=(400, 100))
-            background_rect = play_rect.inflate(20, 10)
+        # Render title
+        title = self.title_font.render("BORN IN THE REACTOR", True, (255, 255, 255))
+        screen.blit(title, (400 - title.get_width() // 2, 10))
+        
+        # Render "Press Enter to play" with pulsing background
+        play_text = self.font.render("Press Enter to play", True, (255, 255, 255))
+        play_rect = play_text.get_rect(center=(400, 100))
+        background_rect = play_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+        screen.blit(play_text, play_rect)
+
+        # Render icons with hover effect and tooltips
+        for icon in self.icons:
+            icon_surface = icon["image"].copy()
+            if icon["hover_alpha"] > 0:
+                # Add glow effect by drawing a semi-transparent white rect
+                glow_surface = pygame.Surface((icon["rect"].width + 10, icon["rect"].height + 10), pygame.SRCALPHA)
+                pygame.draw.rect(glow_surface, (255, 255, 255, int(icon["hover_alpha"])), glow_surface.get_rect())
+                screen.blit(glow_surface, (icon["rect"].x - 5, icon["rect"].y - 5))
+            screen.blit(icon_surface, icon["rect"].topleft)
+            if self.active_icon == icon and self.tooltip_alpha > 0:
+                tooltip_text = self.font.render(icon["tooltip"], True, (255, 255, 255))
+                tooltip_text.set_alpha(int(self.tooltip_alpha))
+                tooltip_rect = tooltip_text.get_rect(center=(icon["rect"].x + icon["rect"].width / 2, icon["rect"].y - 30))
+                tooltip_bg_rect = tooltip_rect.inflate(10, 5)
+                tooltip_bg = pygame.Surface(tooltip_bg_rect.size, pygame.SRCALPHA)
+                tooltip_bg.fill((0, 0, 0, int(self.tooltip_alpha * 0.7)))
+                screen.blit(tooltip_bg, tooltip_bg_rect)
+                screen.blit(tooltip_text, tooltip_rect)
+
+        # Render player sprite
+        sprite = self.animations[self.facing][self.anim_index]
+        scaled_sprite = pygame.transform.scale(sprite, (self.player_width, self.player_height))
+        draw_pos = (self.player_x - self.player_width // 2, self.player_y - self.player_height // 2)
+        screen.blit(scaled_sprite, draw_pos)
+
+        # Render "Press Q to quit" with pulsing background
+        quit_text = self.font.render("Press Q to quit", True, (255, 255, 255))
+        quit_rect = quit_text.get_rect(center=(400, 570))
+        background_rect = quit_rect.inflate(20, 10)
+        pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
+        screen.blit(quit_text, quit_rect)
+
+        # Render error message if any
+        if self.error_message:
+            error_text = self.font.render(self.error_message, True, (255, 50, 50))
+            error_rect = error_text.get_rect(center=(400, 100))
+            error_bg_rect = error_rect.inflate(20, 10)
             pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
-            screen.blit(play_text, play_rect)
-
-            # Render icons with hover effect and tooltips
-            for icon in self.icons:
-                icon_surface = icon["image"].copy()
-                if icon["hover_alpha"] > 0:
-                    # Add glow effect by drawing a semi-transparent white rect
-                    glow_surface = pygame.Surface((icon["rect"].width + 10, icon["rect"].height + 10), pygame.SRCALPHA)
-                    pygame.draw.rect(glow_surface, (255, 255, 255, int(icon["hover_alpha"])), glow_surface.get_rect())
-                    screen.blit(glow_surface, (icon["rect"].x - 5, icon["rect"].y - 5))
-                screen.blit(icon_surface, icon["rect"].topleft)
-                if self.active_icon == icon and self.tooltip_alpha > 0:
-                    tooltip_text = self.font.render(icon["tooltip"], True, (255, 255, 255))
-                    tooltip_text.set_alpha(int(self.tooltip_alpha))
-                    tooltip_rect = tooltip_text.get_rect(center=(icon["rect"].x + icon["rect"].width / 2, icon["rect"].y - 30))
-                    tooltip_bg_rect = tooltip_rect.inflate(10, 5)
-                    tooltip_bg = pygame.Surface(tooltip_bg_rect.size, pygame.SRCALPHA)
-                    tooltip_bg.fill((0, 0, 0, int(self.tooltip_alpha * 0.7)))
-                    screen.blit(tooltip_bg, tooltip_bg_rect)
-                    screen.blit(tooltip_text, tooltip_rect)
-
-            # Render player sprite
-            sprite = self.animations[self.facing][self.anim_index]
-            scaled_sprite = pygame.transform.scale(sprite, (self.player_width, self.player_height))
-            draw_pos = (self.player_x - self.player_width // 2, self.player_y - self.player_height // 2)
-            screen.blit(scaled_sprite, draw_pos)
-
-            # Render "Press Q to quit" with pulsing background
-            quit_text = self.font.render("Press Q to quit", True, (255, 255, 255))
-            quit_rect = quit_text.get_rect(center=(400, 570))
-            background_rect = quit_rect.inflate(20, 10)
-            pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
-            screen.blit(quit_text, quit_rect)
-
-            # Render error message if any
-            if self.error_message:
-                error_text = self.font.render(self.error_message, True, (255, 50, 50))
-                error_rect = error_text.get_rect(center=(400, 100))
-                error_bg_rect = error_rect.inflate(20, 10)
-                pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
-                screen.blit(error_text, error_rect)
-
-        if self.in_help_menu:
-            try:
-                help_background = pygame.image.load(self.config.get("help_background", "assets/bgs/help_bg.png")).convert()
-                help_background = pygame.transform.scale(help_background, (800, 600))
-                screen.blit(help_background, (0, 0))
-            except FileNotFoundError:
-                print("Error loading help background")
-                help_background = pygame.Surface((800, 600))
-                help_background.fill((40, 60, 40))
-                screen.blit(help_background, (0, 0))
-            for i, option in enumerate(self.options):
-                color = (255, 255, 255) if i != self.selected_option else (255, 200, 0)
-                text = self.font.render(option, True, color)
-                screen.blit(text, (400 - text.get_width() // 2, 150 + i * 50))
-
-        if self.message and self.in_help_menu:
-            message_text = self.font.render(self.message, True, (255, 255, 255))
-            screen.blit(message_text, (400 - message_text.get_width() // 2, 240))
-
-        if self.in_help_menu:
-            return_text = self.font.render("Press ESC to return", True, (255, 255, 255))
-            return_rect = return_text.get_rect(center=(400, 540))
-            background_rect = return_rect.inflate(20, 10)
-            pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), background_rect)
-            screen.blit(return_text, return_rect)
+            screen.blit(error_text, error_rect)

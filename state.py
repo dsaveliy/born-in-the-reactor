@@ -9,6 +9,7 @@ class GameState(Enum):
     PAUSE = auto()
     GAME_OVER = auto()
     SETTINGS = auto()
+    HELP = auto()
     LEVEL_TRANSITION = auto()
 
 class State(ABC):
