@@ -3,7 +3,7 @@ from weapon import Weapon, WeaponType
 from config.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class Player:
-    def __init__(self, x, y, health=100, ammo=0, inventory=[WeaponType.PISTOL, "medkit"]):
+    def __init__(self, x, y, health=100, ammo=0, inventory=[WeaponType.PISTOL, "medkit"], aim_line=1):
         # выгружаю картинки
         self.animations = {
             "up":    [pygame.image.load("assets/player/up_0.png").convert_alpha(),
@@ -44,6 +44,8 @@ class Player:
         self.forced_facing = None
         self.forced_facing_timer = 0
         self.forced_facing_duration = 0.4
+        # настрйока стрельбы
+        self.aim_line = aim_line
     
     def switch_weapon(self, weapon_type):
         if weapon_type in self.inventory:
@@ -163,7 +165,7 @@ class Player:
         draw_pos = (self.screen_x - self.width // 2, self.screen_y - self.height // 2)
         screen.blit(scaled_sprite, draw_pos)
 
-        # отрисовка оружия по центру игрока
+        # отрисовка оружия
         weapon = self.weapons[self.current_weapon]
         weapon_sprite, scale_size = weapon.get_current_sprite_and_size(current_facing)
         weapon_sprite = pygame.transform.scale(weapon_sprite, scale_size)

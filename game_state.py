@@ -23,7 +23,8 @@ class GameplayState:
             health=player_settings.get("initial_health", 100),
             ammo=player_settings.get("initial_ammo", 0),
             inventory={ WeaponType[item.upper()] for item in player_settings.get("inventory", []) 
-                    if item in ["pistol", "rifle", "shotgun"] }
+                    if item in ["pistol", "rifle", "shotgun"] },
+            aim_line=player_settings.get("aim_line", 1),
         )
         self.tracers = []
         self.damage_effect = DamageEffect()
