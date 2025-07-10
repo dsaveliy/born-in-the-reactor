@@ -57,7 +57,7 @@ class MainMenuState(State):
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading main.json: {e}")
             self.config = {
-                "background": "assets/bgs/main_menu.png",
+                "background": "assets/bgs/main_menu2.png",
                 "icons": []
             }
 

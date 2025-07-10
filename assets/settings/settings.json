@@ -11,6 +11,7 @@
         "inventory": [
             "rifle",
             "medkit"
-        ]
+        ],
+        "aim_line": 0
     }
 }

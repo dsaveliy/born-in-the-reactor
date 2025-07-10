@@ -20,10 +20,17 @@ class Level:
         self.player_spawn = self.data.get('player_spawn', {'x': 400, 'y': 300})
         self.enemies = [Enemy(e["x"], e["y"]) for e in self.data.get("enemies", [])]
         self.transition_zone = self.data.get("transition_zone", None)
+        if self.transition_zone and "image" in self.transition_zone:
+            self.door_image = pygame.image.load(self.transition_zone["image"]).convert_alpha()
+            self.door_image = pygame.transform.scale( self.door_image, (self.transition_zone["width"], 
+                    self.transition_zone["height"]))
+        else:
+            self.door_image = None
         # загрузка фонового изображения
         self.background = pygame.image.load(self.background_texture).convert()
         self.bg_width = self.background.get_width()
         self.bg_height = self.background.get_height()
+
 
     def is_position_blocked(self, x, y, width, height):
         # проверка, является ли область стеной
@@ -90,3 +97,14 @@ class Level:
                 obj = pygame.image.load(object["image"]).convert_alpha()
                 scaled_obj = pygame.transform.scale(obj, (object['width'], object['height']))
                 screen.blit(scaled_obj, (object['x'] + camera_offset_x, object['y'] + camera_offset_y))
+
+        # отрисовка двери перехода
+        if self.transition_zone:
+            door_x = self.transition_zone["x"] + camera_offset_x
+            door_y = self.transition_zone["y"] + camera_offset_y
+
+            if self.door_image:
+                screen.blit(self.door_image, (door_x, door_y))
+            else:
+                pygame.draw.rect(screen, (0, 255, 255), 
+                    (door_x, door_y, self.transition_zone["width"], self.transition_zone["height"]), 0)

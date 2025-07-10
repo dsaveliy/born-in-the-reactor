@@ -41,12 +41,12 @@ class Weapon:
         
         self.scale_sizes = {
             "up": {
-                "side": (15, 45),
+                "side": (45, 45),
                 "shoot": (15, 45),
                 "reload": (45, 45)
             },
             "down": {
-                "side": (15, 45),
+                "side": (45, 45),
                 "shoot": (15, 45),
                 "reload": (45, 45)
             },
@@ -104,6 +104,9 @@ class Weapon:
     def update(self, dt):
         if self.cooldown > 0:
             self.cooldown -= dt
+
+        if self.just_fired and self.cooldown <= 0:
+            self.just_fired = False
             
     def can_fire(self):
         return (self.ammo > 0 

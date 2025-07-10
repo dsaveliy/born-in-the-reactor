@@ -14,7 +14,7 @@ class Enemy:
         self.chasing = False
         self.start_chase_distance = 200  # начало преследования
         self.stop_chase_distance = 300   # конец преследования
-        self.attack_radius = 30
+        self.attack_radius = 50
         self.attack_damage = 10
         self.attack_cooldown = 1.0
         self.attack_timer = 0.0
@@ -55,11 +55,12 @@ class Enemy:
             "down": (30, 44),
             "left": (44, 36),
             "right": (44, 36),
+            "death": (44, 36)
         }
 
         self.anim_index = 0
         self.anim_timer = 0.0
-        self.anim_speed = 0.5  # секунд между сменой кадров
+        self.anim_speed = 0.2  # секунд между сменой кадров
         self.attack_display_time = 0.3  # время показа кадра атаки
         self.attack_display_timer = 0.0
 
@@ -83,32 +84,48 @@ class Enemy:
             self.death_timer -= dt
             return self.death_timer <= 0 # для внешнего вызова
 
-
         player_pos = pygame.Vector2(player.world_x, player.world_y)
         distance = self.position.distance_to(player_pos)
 
-        # Проверка атаки
-        if self.attack_timer <= 0 and distance < self.attack_radius:
+        dx = 0
+        dy = 0
+
+        # проверка видимости игрока (нет стен между врагом и игроком)
+        def can_see_player():
+            start = self.position
+            end = player_pos
+            for obstacle in level.obstacles:
+                obstacle_rect = pygame.Rect(
+                    obstacle['x'],
+                    obstacle['y'],
+                    obstacle['width'],
+                    obstacle['height']
+                )
+                if obstacle_rect.clipline(start, end):
+                    return False
+            return True
+
+        # проверка атаки (только если игрок виден)
+        if self.attack_timer <= 0 and distance < self.attack_radius and can_see_player():
             if player.health > 0:
                 player.health -= self.attack_damage
-                print(f"⚠ Игрок получил урон! HP = {player.health}")
                 self.attack_timer = self.attack_cooldown
                 self.is_attacking = True
-                self.attack_display_timer = self.attack_display_time  # Запускаем таймер показа атаки
+                self.attack_display_timer = self.attack_display_time  # запускаем таймер показа атаки
 
-        # Обновляем таймеры
+        # обновляем таймеры
         self.attack_timer -= dt
         if self.attack_display_timer > 0:
             self.attack_display_timer -= dt
         else:
             self.is_attacking = False
 
-        # Если не атакуем — движение и анимация движения
+        # если не атакуем — движение и анимация движения
         if not self.is_attacking:
-            # Обновляем состояние преследования
-            if not self.chasing and distance < self.start_chase_distance:
+            # обновляем состояние преследования (учитывая видимость игрока)
+            if not self.chasing and distance < self.start_chase_distance and can_see_player():
                 self.chasing = True
-            elif self.chasing and distance > self.stop_chase_distance:
+            elif self.chasing and (distance > self.stop_chase_distance or not can_see_player()):
                 self.chasing = False
 
             if self.chasing:
@@ -134,15 +151,33 @@ class Enemy:
             if level.is_position_blocked(self.position.x, self.position.y, self.width, self.height):
                 self.position.y -= dy
 
-            # Анимация движения
+            # анимация движения
             self.anim_timer += dt
             if self.anim_timer >= self.anim_speed:
                 self.anim_timer = 0
                 facing = self.get_facing_direction()
                 self.anim_index = (self.anim_index + 1) % len(self.animations["move"][facing])
         else:
-            # При атаке не обновляем анимацию движения, показываем статичный кадр атаки
+            # при атаке не обновляем анимацию движения, показываем статичный кадр атаки
             self.anim_index = 0
+
+        enemy_rect = pygame.Rect(
+            self.position.x - self.width//2,
+            self.position.y - self.height//2,
+            self.width, self.height
+        )
+        
+        # Проверка коллизии с игроком
+        player_rect = pygame.Rect(
+            player.world_x - player.width//2,
+            player.world_y - player.height//2,
+            player.width, player.height
+        )
+        
+        if enemy_rect.colliderect(player_rect):
+            # Откат движения врага
+            self.position.x -= dx
+            self.position.y -= dy
 
 
     def get_facing_direction(self):
@@ -160,7 +195,7 @@ class Enemy:
         screen_pos = self.position - camera_offset
         if self.is_dead:
             sprite = self.death_animations[self.get_facing_direction()]
-            scaled = pygame.transform.scale(sprite, (56, 36))
+            scaled = pygame.transform.scale(sprite, (56, 14))
             screen.blit(scaled, (screen_pos.x - self.width//2, screen_pos.y - self.height//2))
         else:
             facing = self.get_facing_direction()

@@ -5,6 +5,7 @@ from level import Level
 from settings_state import SettingsState
 from weapon import Weapon, WeaponType
 from hitscan import HitscanShot
+from effects import DamageEffect
 
 class GameplayState:
     def __init__(self, game):
@@ -22,22 +23,56 @@ class GameplayState:
             health=player_settings.get("initial_health", 100),
             ammo=player_settings.get("initial_ammo", 0),
             inventory={ WeaponType[item.upper()] for item in player_settings.get("inventory", []) 
-                    if item in ["pistol", "rifle", "shotgun"] }
+                    if item in ["pistol", "rifle", "shotgun"] },
+            aim_line=player_settings.get("aim_line", 1),
         )
         self.tracers = []
+        self.damage_effect = DamageEffect()
 
     def update(self, dt):
+        # проверка прохода двери
+        if self.levels[self.current_level].transition_zone:
+            zone = self.levels[self.current_level].transition_zone
+            zone_rect = pygame.Rect(
+                zone["x"], 
+                zone["y"], 
+                zone["width"], 
+                zone["height"]
+            )
+
+            player_rect = pygame.Rect(
+                self.player.world_x - self.player.width//2,
+                self.player.world_y - self.player.height//2,
+                self.player.width, 
+                self.player.height
+            )
+
+            if zone_rect.contains(player_rect):
+                self.change_level(zone["target_level"])
+                return
         # действия на клавиатуре
         # движение
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            self.player.move("up", self.levels[self.current_level])
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            self.player.move("down", self.levels[self.current_level])
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self.player.move("left", self.levels[self.current_level])
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self.player.move("right", self.levels[self.current_level])
+        move_direction = None
+        if (keys[pygame.K_w] or keys[pygame.K_UP]) and (keys[pygame.K_a] or keys[pygame.K_LEFT]):
+            move_direction = "up_left"
+        elif (keys[pygame.K_w] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            move_direction = "up_right"
+        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_a] or keys[pygame.K_LEFT]):
+            move_direction = "down_left"
+        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            move_direction = "down_right"
+        elif keys[pygame.K_w] or keys[pygame.K_UP]:
+            move_direction = "up"
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            move_direction = "down"
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            move_direction = "left"
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            move_direction = "right"
+        
+        if move_direction:
+            self.player.move(move_direction, self.levels[self.current_level])
         # смена оружия
         if keys[pygame.K_1]:
             self.player.switch_weapon(WeaponType.PISTOL)
@@ -69,20 +104,20 @@ class GameplayState:
             self.game.change_state(GameState.MAIN_MENU)
             self.player.health = 100
 
-        if self.levels[self.current_level].transition_zone:
-            zone = self.levels[self.current_level].transition_zone
-            zone_rect = pygame.Rect(zone["x"], zone["y"], zone["width"], zone["height"])
-            player_rect = pygame.Rect(self.player.world_x, self.player.world_y, self.player.width, self.player.height)
-            if zone_rect.contains(player_rect):
-                self.change_level(zone["target_level"])
-
         for enemy in self.levels[self.current_level].enemies:
             if enemy.update(dt, self.levels[self.current_level], self.player):
                 self.levels[self.current_level].enemies.remove(enemy)
+        # эффект крови
+        current_health = self.player.health
+        if hasattr(self, 'last_health') and current_health < self.last_health:
+            self.damage_effect.trigger()
+        self.last_health = current_health
+        
+        self.damage_effect.update(dt)
+
 
     def render(self, screen):
         self.levels[self.current_level].render(screen, self.player.world_x, self.player.world_y) # сначала рисуем уровень(с учетом позиции игрока)
-        self.player.render(screen) # игрок
         for enemy in self.levels[self.current_level].enemies: # враги
             enemy.render(screen, camera_offset=pygame.Vector2(self.player.world_x - 400, self.player.world_y - 300))
         for tracer in self.tracers: # прицел
@@ -95,12 +130,11 @@ class GameplayState:
             offset = pygame.Vector2(self.player.world_x - 400, self.player.world_y - 300)
             pygame.draw.line(screen, (200, 200, 50), aim_start - offset, aim_end - offset, 1)
 
-        # отрисовка портала на следующий уровень
-        zone = self.levels[self.current_level].transition_zone
-        if zone:
-            offset = pygame.Vector2(self.player.world_x - 400, self.player.world_y - 300)
-            rect = pygame.Rect(zone["x"], zone["y"], zone["width"], zone["height"])
-            pygame.draw.rect(screen, (0, 255, 255), rect.move(-offset), 2)
+        self.player.render(screen) # игрок
+
+        # эффект крови
+        screen_rect = screen.get_rect()
+        self.damage_effect.render(screen, screen_rect)
 
         # отрисовка HUD(сейчас - демо)
         # TODO
