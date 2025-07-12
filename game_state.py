@@ -148,27 +148,34 @@ class GameplayState:
         screen_rect = screen.get_rect()
         self.damage_effect.render(screen, screen_rect)
 
-        # отрисовка HUD(сейчас - демо)
-        # TODO
+        # отрисовка HUD
         font = pygame.font.SysFont("Arial", 24)
-
+        
+        # Здоровье
         health_text = font.render(f"Health: {self.player.health}", True, (255, 255, 255))
         screen.blit(health_text, (10, 10))
-
+        
+        # Оружие
         weapon = self.player.weapons[self.player.current_weapon]
         weapon_text = font.render(
             f"{self.player.current_weapon.value.upper()}",
             True, (255, 255, 255))
         screen.blit(weapon_text, (10, 40))
-
+        
+        # Боеприпасы
         ammo_text = font.render(
             f"{weapon.ammo}/{weapon.stats['max_ammo']}",
             True, (255, 255, 255))
         screen.blit(ammo_text, (10, 70))
-
+        
+        # Перезарядка
         if weapon.is_reloading:
             reload_text = font.render("RELOADING...", True, (255, 100, 100))
             screen.blit(reload_text, (10, 100))
+        
+        # Инвентарь с хардкодом RIFLE
+        inventory_text = font.render("Inventory: RIFLE", True, (255, 255, 255))
+        screen.blit(inventory_text, (10, 130))
 
     def change_level(self, new_level):
         self.current_level = new_level
