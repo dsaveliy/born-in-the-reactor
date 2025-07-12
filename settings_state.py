@@ -167,7 +167,7 @@ class SettingsState(State):
         screen.blit(title_text, title_rect)
 
         # Render initial level
-        level_text = self.font.render(f"Initial Level: {self.get_initial_level()}", True, (255, 255, 255))
+        level_text = self.font.render(f"Current Level: {self.get_initial_level()}", True, (255, 255, 255))
         level_rect = level_text.get_rect(center=(400, 100))
         level_bg_rect = level_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), level_bg_rect)
