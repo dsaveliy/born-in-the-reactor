@@ -1,6 +1,5 @@
 import pygame
-import json
-import os
+import sqlite3
 from datetime import datetime
 from state import State, GameState
 
@@ -8,12 +7,12 @@ class StatsState(State):
     def __init__(self, game):
         super().__init__(game)
         try:
-            self.font = pygame.font.Font("assets/fonts/Orbitron-Light.ttf", 36)
+            self.font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 36)
         except FileNotFoundError:
             print("Error loading Orbitron-Light font, using default")
             self.font = pygame.font.Font(None, 36)
         
-        self.load_stats()
+        self.init_database()
         self.action_triggered = False
         
         try:
@@ -24,40 +23,63 @@ class StatsState(State):
             self.background = pygame.Surface((800, 600))
             self.background.fill((50, 50, 50))
 
-    def load_stats(self, file_path="assets/stats/stats.json"):
+    def init_database(self):
         try:
-            with open(file_path, 'r') as f:
-                self.data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading stats: {e}")
-            self.data = {
-                "high_scores": []
-            }
-
-    def save_stats(self, file_path="assets/stats/stats.json"):
-        try:
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, 'w') as f:
-                json.dump(self.data, f, indent=4)
-        except Exception as e:
-            print(f"Error saving stats: {e}")
+            self.conn = sqlite3.connect("assets/stats/stats.db")
+            self.cursor = self.conn.cursor()
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS high_scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    player_name TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    timestamp TEXT NOT NULL
+                )
+            """)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error initializing database: {e}")
+            self.conn = None
+            self.cursor = None
 
     def add_score(self, player_name, score):
+        if not self.conn:
+            print("Database not available, cannot add score")
+            return
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.data["high_scores"].append({
-            "player_name": player_name,
-            "score": score,
-            "timestamp": timestamp
-        })
-        self.data["high_scores"] = sorted(
-            self.data["high_scores"],
-            key=lambda x: x["score"],
-            reverse=True
-        )[:10]
-        self.save_stats()
+        try:
+            self.cursor.execute("""
+                INSERT INTO high_scores (player_name, score, timestamp)
+                VALUES (?, ?, ?)
+            """, (player_name, score, timestamp))
+            self.conn.commit()
+            # Keep only top 10 scores
+            self.cursor.execute("""
+                DELETE FROM high_scores
+                WHERE id NOT IN (
+                    SELECT id FROM high_scores
+                    ORDER BY score DESC
+                    LIMIT 10
+                )
+            """)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error adding score: {e}")
 
     def get_high_scores(self):
-        return self.data.get("high_scores", [])
+        if not self.conn:
+            print("Database not available, returning empty scores")
+            return []
+        try:
+            self.cursor.execute("""
+                SELECT player_name, score, timestamp
+                FROM high_scores
+                ORDER BY score DESC
+                LIMIT 10
+            """)
+            return [{"player_name": row[0], "score": row[1], "timestamp": row[2]} for row in self.cursor.fetchall()]
+        except sqlite3.Error as e:
+            print(f"Error fetching scores: {e}")
+            return []
 
     def enter(self):
         print("Entered Stats State")
@@ -65,6 +87,8 @@ class StatsState(State):
 
     def exit(self):
         print("Exiting Stats State")
+        if self.conn:
+            self.conn.close()
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
