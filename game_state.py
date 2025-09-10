@@ -15,6 +15,7 @@ class GameplayState:
         self.game = game
         self.settings = SettingsState(game)  # Create a temporary SettingsState instance
         self.current_level = self.settings.get_initial_level()
+        self.enemies_killed = 0  # Track score
         player_settings = self.settings.get_player_settings()
         
         # Загрузка шрифта для HUD
@@ -157,6 +158,12 @@ class GameplayState:
             if result:
                 start, end, dmg = result
                 self.tracers.append(HitscanShot(start, end, dmg)) # выстрел
+                # Check for enemy kills
+                for enemy in self.levels[self.current_level].enemies[:]:
+                    enemy_rect = pygame.Rect(enemy.position.x, enemy.position.y, enemy.width, enemy.height)
+                    if enemy_rect.clipline(start, end) and enemy.health <= 0 and not enemy.is_dead:
+                        self.enemies_killed += 1  # Increment score
+
         # обновление трейсеров
         for tracer in self.tracers[:]:
             tracer.update(dt)
@@ -168,13 +175,18 @@ class GameplayState:
         # Проверка сбора квестовых предметов
         self._check_quest_item_collection(current_level)
 
+        # if self.player.health <= 0:
+        #     self.game.change_state(GameState.MAIN_MENU)
+        #     self.player.health = 100
         if self.player.health <= 0:
-            self.game.change_state(GameState.MAIN_MENU)
-            self.player.health = 100
+            print(f"Player died, transitioning to GameOverState with score: {self.enemies_killed}")
+            self.game.change_state(GameState.GAME_OVER, score=self.enemies_killed)
+            self.reset_game()  # Reset game state
 
         for enemy in self.levels[self.current_level].enemies:
             if enemy.update(dt, self.levels[self.current_level], self.player):
                 self.levels[self.current_level].enemies.remove(enemy)
+                self.enemies_killed += 1  # Increment score for enemies killed by other means
         # эффект крови
         current_health = self.player.health
         if hasattr(self, 'last_health') and current_health < self.last_health:

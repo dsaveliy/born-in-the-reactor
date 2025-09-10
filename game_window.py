@@ -8,7 +8,7 @@ from settings_state import SettingsState
 from stats_state import StatsState
 from help_state import HelpState
 #from pause import PauseState
-#from game_over import GameOverState
+from game_over import GameOverState
 #from level_transition import LevelTransitionState
 
 class Game:
@@ -18,7 +18,6 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.dt = 0
-        
         self._init_states()
         self.current_state = GameState.MAIN_MENU
         self.states[self.current_state].enter()
@@ -33,15 +32,21 @@ class Game:
             GameState.GAMEPLAY: GameplayState(self),
             GameState.STATS: StatsState(self),
             GameState.SETTINGS: SettingsState(self),
+            GameState.GAME_OVER: GameOverState(self, score=0),
             GameState.HELP: HelpState(self)
             #GameState.INVENTORY: InventoryState(self),
             #GameState.PAUSE: PauseState(self),
-            #GameState.GAME_OVER: GameOverState(self),
             #GameState.LEVEL_TRANSITION: LevelTransitionState(self)
         }
     
-    def change_state(self, new_state):
+    # def change_state(self, new_state):
+    #     self.states[self.current_state].exit()
+    #     self.current_state = new_state
+    #     self.states[self.current_state].enter()
+    def change_state(self, new_state, **kwargs):
         self.states[self.current_state].exit()
+        if new_state == GameState.GAME_OVER:
+            self.states[new_state] = GameOverState(self, **kwargs)  # Create new instance with score
         self.current_state = new_state
         self.states[self.current_state].enter()
     
