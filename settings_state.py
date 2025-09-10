@@ -28,10 +28,10 @@ class SettingsState(State):
 
     def load_settings(self, file_path="assets/settings/settings.json"):
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 self.data = json.load(f)
             # Validate initial_level to prevent KeyError in GameplayState
-            if self.data.get("initial_level") not in ["gomel_streets"]:
+            if self.data.get("initial_level") not in ["gomel_streets", "hospital", "office"]:
                 print(f"Invalid initial_level '{self.data.get('initial_level')}', resetting to 'gomel_streets'")
                 self.data["initial_level"] = "gomel_streets"
                 self.save_settings(file_path)
@@ -40,6 +40,12 @@ class SettingsState(State):
                 self.data["sound_enabled"] = True
             if "player" not in self.data:
                 self.data["player"] = {}
+            if "id" not in self.data["player"]:
+                self.data["player"]["id"] = "default_player"
+            if "photo" not in self.data["player"]:
+                self.data["player"]["photo"] = "assets/player/default_avatar.png"
+            if "nickname" not in self.data["player"]:
+                self.data["player"]["nickname"] = "Survivor"
             if "health_damage_effect" not in self.data["player"]:
                 self.data["player"]["health_damage_effect"] = True
             if "aim_line" not in self.data["player"]:
@@ -53,6 +59,9 @@ class SettingsState(State):
                 "initial_level": "gomel_streets",
                 "sound_enabled": True,
                 "player": {
+                    "id": "default_player",
+                    "photo": "assets/player/default_avatar.png",
+                    "nickname": "Survivor",
                     "initial_health": 100,
                     "initial_ammo": {
                         "pistol": 30,
@@ -69,8 +78,8 @@ class SettingsState(State):
     def save_settings(self, file_path="assets/settings/settings.json"):
         try:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, 'w') as f:
-                json.dump(self.data, f, indent=4)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Error saving settings: {e}")
 

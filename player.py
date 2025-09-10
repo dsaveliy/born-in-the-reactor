@@ -1,9 +1,10 @@
 import pygame
 from weapon import Weapon, WeaponType
 from config.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+from inventory_items import ItemManager, ItemType
 
 class Player:
-    def __init__(self, x, y, health=100, ammo=0, inventory=[WeaponType.PISTOL, "medkit"], aim_line=1):
+    def __init__(self, x, y, health=100, ammo=0, inventory=[], aim_line=1):
         # выгружаю картинки
         self.animations = {
             "up":    [pygame.image.load("assets/player/up_0.png").convert_alpha(),
@@ -33,12 +34,11 @@ class Player:
         self.speed = 2
         self.ammo = ammo
         self.inventory = inventory
-        self.weapons = {
-            #WeaponType.PISTOL: Weapon(WeaponType.PISTOL),
-            WeaponType.RIFLE: Weapon(WeaponType.RIFLE)
-            #WeaponType.SHOTGUN: Weapon(WeaponType.SHOTGUN)
-        }
-        self.current_weapon = WeaponType.RIFLE
+        
+        # Инициализация менеджера предметов
+        self.item_manager = ItemManager()
+        self.weapons = {}  # Пустой инвентарь оружия
+        self.current_weapon = None  # Нет текущего оружия
         self.fire_timer = 0.0
         # разворот в сторону стрельбы
         self.forced_facing = None
@@ -48,29 +48,49 @@ class Player:
         self.aim_line = aim_line
     
     def switch_weapon(self, weapon_type):
-        if weapon_type in self.inventory:
+        if weapon_type in self.inventory and weapon_type in self.weapons:
             self.current_weapon = weapon_type
     
     def fire(self):
-        return self.weapons[self.current_weapon].fire()
+        if self.current_weapon and self.current_weapon in self.weapons:
+            return self.weapons[self.current_weapon].fire()
+        return False
     
     def reload(self):
-        self.weapons[self.current_weapon].start_reload()
+        if self.current_weapon and self.current_weapon in self.weapons:
+            weapon = self.weapons[self.current_weapon]
+            
+            # Проверяем, не полный ли уже магазин
+            if weapon.ammo >= weapon.stats['max_ammo']:
+                print(f"Magazine is already full! ({weapon.ammo}/{weapon.stats['max_ammo']})")
+                return
+            
+            # Проверяем наличие патронов для перезарядки
+            if self.item_manager.has_item(ItemType.AMMO):
+                weapon.start_reload()
+                # Расходуем патроны при перезарядке
+                self.item_manager.remove_item(ItemType.AMMO, 1)
+                print(f"Reloaded! Ammo remaining: {self.item_manager.get_item_count(ItemType.AMMO)}")
+            else:
+                print("No ammo to reload!")
     
     def update(self, dt: float):
         if self.forced_facing_timer > 0:
             self.forced_facing_timer -= dt
             if self.forced_facing_timer <= 0:
                 self.forced_facing = None
-        self.weapons[self.current_weapon].update(dt)
-        weapon = self.weapons[self.current_weapon]
-        if weapon.is_reloading:
-            self.weapon_state = "reload"
-        elif weapon.just_fired:
-            self.weapon_state = "shoot"
+        if self.current_weapon and self.current_weapon in self.weapons:
+            self.weapons[self.current_weapon].update(dt)
+            weapon = self.weapons[self.current_weapon]
+            if weapon.is_reloading:
+                self.weapon_state = "reload"
+            elif weapon.just_fired:
+                self.weapon_state = "shoot"
+            else:
+                self.weapon_state = "side"
+            self.weapons[self.current_weapon].finish_reload()
         else:
-            self.weapon_state = "side"
-        self.weapons[self.current_weapon].finish_reload()
+            self.weapon_state = "none"
         if self.fire_timer > 0:
             self.fire_timer -= dt
         if self.is_moving:
@@ -122,8 +142,27 @@ class Player:
             self.world_x += diagonal_speed
             self.world_y += diagonal_speed
 
-        # Проверка коллизий с уровнем
+        # Проверка коллизий с уровнем - теперь с поддержкой скольжения по стенам
         if level.is_position_blocked(self.world_x, self.world_y, self.width, self.height):
+            # Пробуем движение только по X (горизонтальное скольжение)
+            test_x = self.world_x
+            test_y = original_y
+            if not level.is_position_blocked(test_x, test_y, self.width, self.height):
+                self.world_x = test_x
+                self.world_y = test_y
+                self.is_moving = True
+                return
+            
+            # Пробуем движение только по Y (вертикальное скольжение)
+            test_x = original_x
+            test_y = self.world_y
+            if not level.is_position_blocked(test_x, test_y, self.width, self.height):
+                self.world_x = test_x
+                self.world_y = test_y
+                self.is_moving = True
+                return
+            
+            # Если ни одно направление не работает, возвращаемся к исходной позиции
             self.world_x = original_x
             self.world_y = original_y
             self.is_moving = False
@@ -165,17 +204,20 @@ class Player:
         draw_pos = (self.screen_x - self.width // 2, self.screen_y - self.height // 2)
         screen.blit(scaled_sprite, draw_pos)
 
-        # отрисовка оружия
-        weapon = self.weapons[self.current_weapon]
-        weapon_sprite, scale_size = weapon.get_current_sprite_and_size(current_facing)
-        weapon_sprite = pygame.transform.scale(weapon_sprite, scale_size)
+        # отрисовка оружия (только если есть оружие)
+        if self.current_weapon and self.current_weapon in self.weapons:
+            weapon = self.weapons[self.current_weapon]
+            weapon_sprite, scale_size = weapon.get_current_sprite_and_size(current_facing)
+            weapon_sprite = pygame.transform.scale(weapon_sprite, scale_size)
 
-        weapon_pos = (self.screen_x - weapon_sprite.get_width() // 2,
-                      self.screen_y - weapon_sprite.get_height() // 2 + self.height // 3)
-        screen.blit(weapon_sprite, weapon_pos)
+            weapon_pos = (self.screen_x - weapon_sprite.get_width() // 2,
+                          self.screen_y - weapon_sprite.get_height() // 2 + self.height // 3)
+            screen.blit(weapon_sprite, weapon_pos)
 
 
     def hitscan_fire(self, level, camera_offset):
+        if not self.current_weapon or self.current_weapon not in self.weapons:
+            return None
         weapon = self.weapons[self.current_weapon]
         if self.fire_timer > 0 or not weapon.fire():
             return None
@@ -223,7 +265,11 @@ class Player:
     
         direction = direction.normalize()
         start = pygame.Vector2(self.world_x, self.world_y) + direction * 20  # <-- Сдвиг на 20 пикселей
-        end = start + direction * self.weapons[self.current_weapon].range
+        if self.current_weapon and self.current_weapon in self.weapons:
+            weapon_range = self.weapons[self.current_weapon].range
+        else:
+            weapon_range = 100  # Базовая дальность без оружия
+        end = start + direction * weapon_range
         return start, end
     
     def update_facing_direction(self, mouse_x, mouse_y):
@@ -251,3 +297,28 @@ class Player:
         if self.forced_facing and self.forced_facing_timer > 0:
             return self.forced_facing
         return self.facing
+    
+    def add_item(self, item_type: ItemType, amount: int = 1):
+        """Добавляет предмет в инвентарь"""
+        self.item_manager.add_item(item_type, amount)
+    
+    def use_medkit(self) -> bool:
+        """Использует медкит для восстановления здоровья"""
+        if self.health >= 100:
+            print("Health is already full!")
+            return False
+            
+        if self.item_manager.remove_item(ItemType.MEDKIT, 1):
+            old_health = self.health
+            self.health = min(100, self.health + 25)  # Восстанавливает 25 HP
+            healed = self.health - old_health
+            print(f"Used medkit! Healed {healed} HP. Health: {self.health}/100")
+            print(f"Medkits remaining: {self.item_manager.get_item_count(ItemType.MEDKIT)}")
+            return True
+        else:
+            print("No medkits available!")
+            return False
+    
+    def has_item(self, item_type: ItemType) -> bool:
+        """Проверяет наличие предмета"""
+        return self.item_manager.has_item(item_type)

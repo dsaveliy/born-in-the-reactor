@@ -53,7 +53,7 @@ class MainMenuState(State):
         self.action_triggered = False
 
         try:
-            with open("assets/main/main.json", "r") as f:
+            with open("assets/main/main.json", "r", encoding='utf-8') as f:
                 self.config = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading main.json: {e}")

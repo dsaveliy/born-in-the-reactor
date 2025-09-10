@@ -13,7 +13,7 @@ class HelpState(State):
             self.font = pygame.font.Font(None, 36)
 
         try:
-            with open("assets/main/help.json", "r") as f:
+            with open("assets/main/help.json", "r", encoding='utf-8') as f:
                 self.config = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading help.json: {e}")

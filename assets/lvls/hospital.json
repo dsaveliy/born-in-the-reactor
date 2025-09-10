@@ -1,0 +1,118 @@
+{
+  "name": "hospital",
+  "background_texture": null,
+  "obstacles": [
+    {"x": 0, "y": 0, "width": 1024, "height": 30},
+    {"x": 0, "y": 30, "width": 30, "height": 994},
+    {"x": 30, "y": 994, "width": 994, "height": 30},
+    {"x": 994, "y": 30, "width": 30, "height": 964},
+    
+    {"x": 30, "y": 700, "width": 50, "height": 30},
+    {"x": 160, "y": 700, "width": 380, "height": 30},
+    {"x": 620, "y": 700, "width": 222, "height": 30},
+    {"x": 922, "y": 700, "width": 72, "height": 30},
+    {"x": 680, "y": 700, "width": 30, "height": 140},
+    {"x": 680, "y": 840, "width": 30, "height": 160},
+    
+    {"x": 30, "y": 500, "width": 200, "height": 30},
+    {"x": 300, "y": 500, "width": 30, "height": 200},
+    {"x": 500, "y": 500, "width": 200, "height": 30},
+    {"x": 770, "y": 500, "width": 30, "height": 200},
+    
+    {"x": 30, "y": 300, "width": 300, "height": 30},
+    {"x": 400, "y": 300, "width": 30, "height": 200},
+    {"x": 500, "y": 300, "width": 200, "height": 30},
+    {"x": 770, "y": 300, "width": 30, "height": 200},
+    
+    {"x": 400, "y": 30, "width": 30, "height": 270},
+    {"x": 600, "y": 30, "width": 30, "height": 270}
+  ],
+  "objects_decor": [],
+  "enemies": [],
+  "objects": [
+    {"x": 200, "y": 150, "type": "medkit"},
+    {"x": 700, "y": 150, "type": "ammo"},
+    {"x": 100, "y": 350, "type": "medkit"},
+    {"x": 550, "y": 350, "type": "ammo"}
+  ],
+  "player_spawn": {"x": 80, "y": 80},
+  "transition_zone": {
+    "x": 80,
+    "y": 900,
+    "width": 80,
+    "height": 80,
+    "target_level": "gomel_streets",
+    "image": "assets/bgs/door.png"
+  },
+  "quest": {
+    "required_items": ["pistol", "armor"],
+    "text_messages": [
+      {
+        "text": "Oh no... I hear strange sounds... I'll need weapons and armor",
+        "duration": 3.0,
+        "persistent": false
+      },
+      {
+        "text": "Find pistol and armor to escape",
+        "duration": null,
+        "persistent": true
+      }
+    ],
+    "quest_items": [
+      {
+        "type": "pistol",
+        "x": 250,
+        "y": 200,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "armor",
+        "x": 750,
+        "y": 200,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 850,
+        "y": 600,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 850,
+        "y": 600,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 900,
+        "y": 600,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "medkit",
+        "x": 300,
+        "y": 800,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 600,
+        "y": 800,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 100,
+        "y": 100,
+        "spawn_condition": "door_touched_first_time"
+      },
+      {
+        "type": "ammo",
+        "x": 150,
+        "y": 100,
+        "spawn_condition": "door_touched_first_time"
+      }
+    ]
+  }
+}

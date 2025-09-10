@@ -1,6 +1,6 @@
 {
-    "initial_level": "gomel_streets",
-    "sound_enabled": true,
+    "initial_level": "hospital",
+    "sound_enabled": false,
     "player": {
         "initial_health": 100,
         "initial_ammo": {
@@ -8,12 +8,12 @@
             "rifle": 50,
             "shotgun": 20
         },
-        "inventory": [
-            "rifle",
-            "medkit"
-        ],
-        "aim_line": true,
-        "health_damage_effect": true,
-        "shot_animation": false
+        "inventory": [],
+        "aim_line": false,
+        "health_damage_effect": false,
+        "shot_animation": false,
+        "id": "default_player",
+        "photo": "assets/player/default_avatar.png",
+        "nickname": "Survivor"
     }
 }

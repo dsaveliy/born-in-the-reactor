@@ -26,7 +26,7 @@ class StatsState(State):
 
     def load_stats(self, file_path="assets/stats/stats.json"):
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 self.data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading stats: {e}")
@@ -37,8 +37,8 @@ class StatsState(State):
     def save_stats(self, file_path="assets/stats/stats.json"):
         try:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, 'w') as f:
-                json.dump(self.data, f, indent=4)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Error saving stats: {e}")
 
