@@ -1,5 +1,7 @@
 import pygame
 import sqlite3
+import json
+import os
 from datetime import datetime
 from state import State, GameState
 
@@ -24,22 +26,28 @@ class StatsState(State):
             self.background.fill((50, 50, 50))
 
     def init_database(self):
+        # Initialize SQLite database
+        db_path = "assets/stats/stats.db"
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                self.data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading stats: {e}")
-            self.data = {
-                "high_scores": []
-            }
-
-    def save_stats(self, file_path="assets/stats/stats.json"):
-        try:
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, indent=4, ensure_ascii=False)
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            self.conn = sqlite3.connect(db_path)
+            self.cursor = self.conn.cursor()
+            
+            # Create table if it doesn't exist
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS high_scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    player_name TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    timestamp TEXT NOT NULL
+                )
+            """)
+            self.conn.commit()
         except Exception as e:
-            print(f"Error saving stats: {e}")
+            print(f"Error initializing database: {e}")
+            self.conn = None
+            self.cursor = None
+
 
     def add_score(self, player_name, score):
         if not self.conn:
