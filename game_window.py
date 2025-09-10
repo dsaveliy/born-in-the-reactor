@@ -18,6 +18,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.dt = 0
+        self.mouse_wheel = 0  
         self._init_states()
         self.current_state = GameState.MAIN_MENU
         self.states[self.current_state].enter()
@@ -39,10 +40,6 @@ class Game:
             #GameState.LEVEL_TRANSITION: LevelTransitionState(self)
         }
     
-    # def change_state(self, new_state):
-    #     self.states[self.current_state].exit()
-    #     self.current_state = new_state
-    #     self.states[self.current_state].enter()
     def change_state(self, new_state, **kwargs):
         self.states[self.current_state].exit()
         if new_state == GameState.GAME_OVER:
@@ -52,9 +49,12 @@ class Game:
     
     def run(self):
         while self.running:
+            self.mouse_wheel = 0 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                elif event.type == pygame.MOUSEWHEEL:
+                    self.mouse_wheel += event.y 
             
             self.dt = self.clock.tick(60) / 1000
             self.states[self.current_state].update(self.dt)
