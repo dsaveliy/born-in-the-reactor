@@ -7,6 +7,7 @@ from game_state import GameplayState
 from settings_state import SettingsState
 from stats_state import StatsState
 from help_state import HelpState
+from cutscene_state import CutsceneState
 #from pause import PauseState
 from game_over import GameOverState
 #from level_transition import LevelTransitionState
@@ -33,7 +34,8 @@ class Game:
             GameState.STATS: StatsState(self),
             GameState.SETTINGS: SettingsState(self),
             GameState.GAME_OVER: GameOverState(self, score=0),
-            GameState.HELP: HelpState(self)
+            GameState.HELP: HelpState(self),
+            GameState.CUTSCENE: CutsceneState(self)
             #GameState.INVENTORY: InventoryState(self),
             #GameState.PAUSE: PauseState(self),
             #GameState.LEVEL_TRANSITION: LevelTransitionState(self)
@@ -49,6 +51,12 @@ class Game:
             self.states[new_state] = GameOverState(self, **kwargs)  # Create new instance with score
         self.current_state = new_state
         self.states[self.current_state].enter()
+    
+    def play_cutscene(self, cutscene_path: str, next_state: GameState = None, **kwargs):
+        """Запускает катсцену с переходом к указанному состоянию"""
+        cutscene_state = self.states[GameState.CUTSCENE]
+        cutscene_state.load_cutscene(cutscene_path, next_state, **kwargs)
+        self.change_state(GameState.CUTSCENE)
     
     def run(self):
         while self.running:

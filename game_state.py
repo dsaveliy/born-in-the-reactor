@@ -46,8 +46,12 @@ class GameplayState:
                     # У винтовки картинки в подпапках, берем right/side.png
                     icon_path = f"assets/weapons/{weapon_type}/right/side.png"
                     reload_path = f"assets/weapons/{weapon_type}/right/reload.png"
+                elif weapon_type == "pistol":
+                    # У пистолета картинки в подпапке right
+                    icon_path = f"assets/weapons/{weapon_type}/right/side.png"
+                    reload_path = f"assets/weapons/{weapon_type}/right/reload.png"
                 else:
-                    # У пистолета и дробовика картинки в корне папки
+                    # У дробовика картинки в корне папки
                     icon_path = f"assets/weapons/{weapon_type}/side.png"
                     reload_path = f"assets/weapons/{weapon_type}/reload.png"
                 
@@ -105,7 +109,30 @@ class GameplayState:
 
             # Используем новый обработчик двери
             if self.door_handler.check_door_interaction(player_rect, current_level.transition_zone):
-                self.change_level(current_level.transition_zone["target_level"])
+                target_level = current_level.transition_zone["target_level"]
+                
+                # Проверяем, нужна ли катсцена для перехода
+                if self.current_level == "hospital" and target_level == "gomel_streets":
+                    # Запускаем катсцену побега из больницы
+                    print("Playing hospital escape cutscene")
+                    self.game.play_cutscene(
+                        "assets/cutscenes/hospital_escape.json", 
+                        GameState.GAMEPLAY,
+                        target_level=target_level
+                    )
+                    return
+                elif self.current_level == "gomel_streets" and target_level == "hospital":
+                    # Катсцена прибытия в Гомель (обратный переход)
+                    print("Playing Gomel arrival cutscene")
+                    self.game.play_cutscene(
+                        "assets/cutscenes/gomel_arrival.json",
+                        GameState.GAMEPLAY, 
+                        target_level=target_level
+                    )
+                    return
+                else:
+                    # Обычная смена уровня без катсцены
+                    self.change_level(target_level)
                 return
         # действия на клавиатуре
         # движение
@@ -208,30 +235,46 @@ class GameplayState:
             item_rect = pygame.Rect(quest_item.x, quest_item.y, 30, 20)
             
             if player_rect.colliderect(item_rect):
-                # Помечаем предмет как собранный СРАЗУ
-                quest_item.is_collected = True
+                # Проверяем, можно ли добавить предмет в инвентарь
+                item_added = False
                 
-                # Предмет собран
-                level.quest_system.trigger_event(
-                    QuestEventType.ITEM_COLLECTED, 
-                    {"item_type": quest_item.item_type}
-                )
-                
-                # Добавляем предмет в инвентарь игрока
                 if quest_item.item_type == "pistol":
-                    self.player.inventory.add(WeaponType.PISTOL)
-                    if WeaponType.PISTOL not in self.player.weapons:
-                        self.player.weapons[WeaponType.PISTOL] = Weapon(WeaponType.PISTOL)
-                    self.player.add_item(ItemType.PISTOL)
-                elif quest_item.item_type == "armor":
-                    self.player.add_item(ItemType.ARMOR)
+                    # Проверяем, можно ли добавить пистолет
+                    if self.player.item_manager.can_add_item(ItemType.PISTOL):
+                        self.player.inventory.add(WeaponType.PISTOL)
+                        if WeaponType.PISTOL not in self.player.weapons:
+                            self.player.weapons[WeaponType.PISTOL] = Weapon(WeaponType.PISTOL)
+                        item_added = self.player.add_item(ItemType.PISTOL)
+                    else:
+                        print(f"Cannot collect {quest_item.item_type}: inventory full!")
+                        
+                        
                 elif quest_item.item_type == "medkit":
-                    self.player.add_item(ItemType.MEDKIT)
+                    if self.player.item_manager.can_add_item(ItemType.MEDKIT):
+                        item_added = self.player.add_item(ItemType.MEDKIT)
+                    else:
+                        print(f"Cannot collect {quest_item.item_type}: consumable inventory full!")
+                        
                 elif quest_item.item_type == "ammo":
-                    self.player.add_item(ItemType.AMMO)
+                    if self.player.item_manager.can_add_item(ItemType.AMMO):
+                        item_added = self.player.add_item(ItemType.AMMO)
+                    else:
+                        print(f"Cannot collect {quest_item.item_type}: consumable inventory full!")
                 
-                print(f"Collected {quest_item.item_type}!")
-                break  # Собираем только ОДИН предмет за кадр
+                # Если предмет был успешно добавлен, помечаем его как собранный
+                if item_added:
+                    quest_item.is_collected = True
+                    
+                    # Предмет собран
+                    level.quest_system.trigger_event(
+                        QuestEventType.ITEM_COLLECTED, 
+                        {"item_type": quest_item.item_type}
+                    )
+                    
+                    print(f"Collected {quest_item.item_type}!")
+                    print(f"Inventory status: {self.player.item_manager.get_inventory_status()}")
+                
+                break  # Обрабатываем только ОДИН предмет за кадр
 
 
     def render(self, screen):

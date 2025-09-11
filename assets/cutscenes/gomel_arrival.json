@@ -1,0 +1,8 @@
+{
+  "background_image": "assets/cutscenes/gomel_bg.png",
+  "text": "The city is dead. Only wind walks between buildings.\n\nPeople used to live here once...\nNow this is mutant territory.\n\nBe careful. Every step could be your last.",
+  "black_duration": 1.0,
+  "first_fade_duration": 4.0,
+  "text_duration": 5.5,
+  "fade_duration": 1.5
+}

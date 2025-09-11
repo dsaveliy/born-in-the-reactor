@@ -11,6 +11,7 @@ class GameState(Enum):
     SETTINGS = auto()
     HELP = auto()
     LEVEL_TRANSITION = auto()
+    CUTSCENE = auto()
 
 class State(ABC):
     def __init__(self, game):

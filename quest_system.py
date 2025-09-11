@@ -10,7 +10,7 @@ class QuestEventType(Enum):
 
 class QuestItem:
     def __init__(self, item_type: str, x: int, y: int, spawn_condition: str = None):
-        self.item_type = item_type  # "pistol", "armor", "medkit" и др.
+        self.item_type = item_type  # "pistol", "medkit" и др.
         self.x = x
         self.y = y
         self.spawn_condition = spawn_condition  # флаг для появления предмета
@@ -101,12 +101,8 @@ class QuestSystem:
     
     def _handle_item_collected(self, item_type: str):
         # обрабатывает сбор предмета
-        for quest_item in self._quest_items:
-            if quest_item.item_type == item_type and not quest_item.is_collected:
-                quest_item.is_collected = True
-                break
-        
-        # проверяем завершение квеста
+        # Примечание: предмет уже помечен как собранный в game_state.py
+        # Здесь мы просто проверяем завершение квеста
         self._check_quest_completion()
     
     def _check_spawn_conditions(self):

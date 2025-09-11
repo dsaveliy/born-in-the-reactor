@@ -1,0 +1,17 @@
+{
+  "background_image": "assets/cutscenes/first_cut.png",
+  "second_image": "assets/cutscenes/second_cut.png",
+  "text": "Something's wrong... A strange sound echoes from somewhere far away. My head is spinning... Consciousness is leaving me...",
+  "second_text": "Where am I? What happened? I'm lying on the floor in my room.A siren is wailing outside... Something happened to the reactor!",
+  "black_duration": 1.0,
+  "first_fade_duration": 3.0,
+  "text_duration": 10.0,
+  "chars_per_second": 9,
+  "blink_duration": 0.5,
+  "black_pause_duration": 2.0,
+  "slow_fade_duration": 6.0,
+  "second_text_duration": 8.0,
+  "second_chars_per_second": 18,
+  "title_screen_duration": 0.0,
+  "wait_for_input": true
+}

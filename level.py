@@ -131,12 +131,8 @@ class Level:
             sprite = None
             try:
                 if quest_item.item_type == "pistol":
-                    sprite = pygame.image.load("assets/weapons/pistol/side.png").convert_alpha()
+                    sprite = pygame.image.load("assets/weapons/pistol/right/side.png").convert_alpha()
                     sprite = pygame.transform.scale(sprite, (40, 25))
-                elif quest_item.item_type == "armor":
-                    # Временно используем спрайт пистолета для брони (пока нет спрайта брони)
-                    sprite = pygame.image.load("assets/weapons/pistol/side.png").convert_alpha()
-                    sprite = pygame.transform.scale(sprite, (35, 25))
                 elif quest_item.item_type == "medkit":
                     sprite = pygame.image.load("assets/medkit/medkit.png").convert_alpha()
                     sprite = pygame.transform.scale(sprite, (30, 20))
@@ -148,7 +144,14 @@ class Level:
                     screen.blit(sprite, (item_x, item_y))
                 else:
                     # Fallback к цветным прямоугольникам
-                    color = (255, 255, 0) if quest_item.item_type == "pistol" else (0, 255, 255)
+                    if quest_item.item_type == "pistol":
+                        color = (255, 255, 0)  # Жёлтый для пистолета
+                    elif quest_item.item_type == "medkit":
+                        color = (0, 255, 0)    # Зелёный для медкита
+                    elif quest_item.item_type == "ammo":
+                        color = (255, 165, 0)  # Оранжевый для патронов
+                    else:
+                        color = (255, 255, 255)  # Белый для остальных
                     pygame.draw.rect(screen, color, (item_x, item_y, 30, 20))
                     pygame.draw.rect(screen, (0, 0, 0), (item_x, item_y, 30, 20), 2)
                     
@@ -156,8 +159,6 @@ class Level:
                 # Fallback к цветным прямоугольникам если спрайт не найден
                 if quest_item.item_type == "pistol":
                     color = (255, 255, 0)  # Жёлтый для пистолета
-                elif quest_item.item_type == "armor":
-                    color = (0, 255, 255)  # Циан для брони
                 elif quest_item.item_type == "medkit":
                     color = (0, 255, 0)    # Зелёный для медкита
                 elif quest_item.item_type == "ammo":
