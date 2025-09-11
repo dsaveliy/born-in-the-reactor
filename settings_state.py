@@ -112,54 +112,30 @@ class SettingsState(State):
             self.game.change_state(GameState.MAIN_MENU)
             self.action_triggered = True
 
-        # Dynamically calculate rectangles for click detection
-        # Sound
-        sound_label = self.font.render("Sound", True, (255, 255, 255))
-        sound_label_rect = sound_label.get_rect(center=(300, 175))
-        sound_status = self.font.render("ON" if self.data["sound_enabled"] else "OFF", True, (255, 255, 255))
-        sound_status_rect = sound_status.get_rect(center=(300, 225))
-        # Health Damage Effect
-        health_effect_label = self.font.render("Health Damage Effect", True, (255, 255, 255))
-        health_effect_label_rect = health_effect_label.get_rect(center=(550, 175))
-        health_effect_status = self.font.render("ON" if self.data["player"]["health_damage_effect"] else "OFF", True, (255, 255, 255))
-        health_effect_status_rect = health_effect_status.get_rect(center=(550, 225))
-        # Aiming Line
-        aim_line_label = self.font.render("Aiming Line", True, (255, 255, 255))
-        aim_line_label_rect = aim_line_label.get_rect(center=(300, 325))
-        aim_line_status = self.font.render("ON" if self.data["player"]["aim_line"] else "OFF", True, (255, 255, 255))
-        aim_line_status_rect = aim_line_status.get_rect(center=(300, 375))
-        # Shot Animation
-        shot_anim_label = self.font.render("Shot Animation", True, (255, 255, 255))
-        shot_anim_label_rect = shot_anim_label.get_rect(center=(550, 325))
-        shot_anim_status = self.font.render("ON" if self.data["player"]["shot_animation"] else "OFF", True, (255, 255, 255))
-        shot_anim_status_rect = shot_anim_status.get_rect(center=(550, 375))
+        # Dynamic toggle logic for settings
+        if mouse_clicked and not self.action_triggered:
+            # Toggle sound
+            if 200 < mouse_pos[0] < 400 and 200 < mouse_pos[1] < 250:
+                self.data["sound_enabled"] = not self.data["sound_enabled"]
+                self.save_settings()
+                self.action_triggered = True
+            # Toggle health damage effect
+            elif 450 < mouse_pos[0] < 650 and 200 < mouse_pos[1] < 250:
+                self.data["player"]["health_damage_effect"] = not self.data["player"]["health_damage_effect"]
+                self.save_settings()
+                self.action_triggered = True
+            # Toggle aiming line
+            elif 200 < mouse_pos[0] < 400 and 350 < mouse_pos[1] < 400:
+                self.data["player"]["aim_line"] = not self.data["player"]["aim_line"]
+                self.save_settings()
+                self.action_triggered = True
+            # Toggle shot animation
+            elif 450 < mouse_pos[0] < 650 and 350 < mouse_pos[1] < 400:
+                self.data["player"]["shot_animation"] = not self.data["player"]["shot_animation"]
+                self.save_settings()
+                self.action_triggered = True
 
-        # Sound toggle
-        if (keys[pygame.K_SPACE] or (mouse_clicked and (sound_label_rect.collidepoint(mouse_pos) or sound_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
-            self.data["sound_enabled"] = not self.data["sound_enabled"]
-            self.save_settings()
-            print(f"Sound toggled to: {self.data['sound_enabled']}")
-            self.action_triggered = True
-        # Health Damage Effect toggle
-        elif (keys[pygame.K_SPACE] or (mouse_clicked and (health_effect_label_rect.collidepoint(mouse_pos) or health_effect_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
-            self.data["player"]["health_damage_effect"] = not self.data["player"]["health_damage_effect"]
-            self.save_settings()
-            print(f"Health Damage Effect toggled to: {self.data['player']['health_damage_effect']}")
-            self.action_triggered = True
-        # Aiming Line toggle
-        elif (keys[pygame.K_SPACE] or (mouse_clicked and (aim_line_label_rect.collidepoint(mouse_pos) or aim_line_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
-            self.data["player"]["aim_line"] = not self.data["player"]["aim_line"]
-            self.save_settings()
-            print(f"Aiming Line toggled to: {self.data['player']['aim_line']}")
-            self.action_triggered = True
-        # Shot Animation toggle
-        elif (keys[pygame.K_SPACE] or (mouse_clicked and (shot_anim_label_rect.collidepoint(mouse_pos) or shot_anim_status_rect.collidepoint(mouse_pos)))) and not self.action_triggered:
-            self.data["player"]["shot_animation"] = not self.data["player"]["shot_animation"]
-            self.save_settings()
-            print(f"Shot Animation toggled to: {self.data['player']['shot_animation']}")
-            self.action_triggered = True
-
-        if not keys[pygame.K_ESCAPE] and not keys[pygame.K_SPACE] and not mouse_clicked:
+        if not keys[pygame.K_ESCAPE] and not mouse_clicked:
             self.action_triggered = False
 
     def render(self, screen):
@@ -235,8 +211,8 @@ class SettingsState(State):
         screen.blit(shot_anim_status, shot_anim_status_rect)
 
         # Render return prompt
-        return_text = self.font.render("Press ESC to return to menu", True, (255, 255, 255))
-        return_rect = return_text.get_rect(center=(400, 500))
+        return_text = self.font.render("Press ESC to return", True, (255, 255, 255))
+        return_rect = return_text.get_rect(center=(400, 540))
         return_bg_rect = return_rect.inflate(20, 10)
         pygame.draw.rect(screen, (0, 0, 0, pulse_alpha), return_bg_rect)
         screen.blit(return_text, return_rect)
