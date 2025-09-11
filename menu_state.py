@@ -216,12 +216,13 @@ class MainMenuState(State):
                 try:
                     if GameState.GAMEPLAY not in self.game.states:
                         raise ValueError("Gameplay state not initialized")
-                    print("Transitioning to GameState.GAMEPLAY")
-                    self.game.change_state(GameState.GAMEPLAY)
+                    print("Starting game with intro cutscene")
+                    # Запускаем интро катсцену, которая перейдет к геймплею
+                    self.game.play_cutscene("assets/cutscenes/intro.json", GameState.GAMEPLAY)
                     self.error_message = None
                     self.error_timer = 0
                 except Exception as e:
-                    print(f"Failed to transition to Gameplay: {type(e).__name__}: {e}")
+                    print(f"Failed to start game: {type(e).__name__}: {e}")
                     self.error_message = "Cannot start game: Level not found"
                     self.error_timer = 0
             elif self.selected_option == 1:

@@ -1,0 +1,8 @@
+{
+  "background_image": "assets/cutscenes/hospital_bg.png", 
+  "text": "You have gathered all necessary equipment.\n\nDangerous streets of Gomel await ahead.\nMutants and radiation are your main enemies.\n\nNo time for hesitation. You must move!",
+  "black_duration": 1.0,
+  "first_fade_duration": 3.0,
+  "text_duration": 5.0,
+  "fade_duration": 1.5
+}

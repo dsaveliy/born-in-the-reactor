@@ -6,7 +6,7 @@ class HitscanShot:
         self.start = pygame.Vector2(start_pos)
         self.end = pygame.Vector2(end_pos)
         self.damage = damage
-        self.timer = 0.05  # длительность трейсера
+        self.timer = 0.25  # длительность трейсера
 
     def update(self, dt):
         self.timer -= dt

@@ -298,9 +298,10 @@ class Player:
             return self.forced_facing
         return self.facing
     
-    def add_item(self, item_type: ItemType, amount: int = 1):
-        """Добавляет предмет в инвентарь"""
-        self.item_manager.add_item(item_type, amount)
+    def add_item(self, item_type: ItemType, amount: int = 1) -> bool:
+        """Добавляет предмет в инвентарь
+        Возвращает True если успешно добавлен, False если инвентарь переполнен"""
+        return self.item_manager.add_item(item_type, amount)
     
     def use_medkit(self) -> bool:
         """Использует медкит для восстановления здоровья"""

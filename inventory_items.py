@@ -12,8 +12,7 @@ class ItemType(Enum):
     """Типы предметов"""
     MEDKIT = "medkit"
     AMMO = "ammo"
-    PISTOL = "pistol" 
-    ARMOR = "armor"
+    PISTOL = "pistol"
 
 
 class InventoryItem:
@@ -25,12 +24,22 @@ class InventoryItem:
         self.display_size = display_size
         self.sprite = None
         
+        # Убеждаемся, что pygame инициализирован
+        if not pygame.get_init():
+            pygame.init()
+        
         # Загружаем спрайт
         try:
             self.original_sprite = pygame.image.load(sprite_path).convert_alpha()
             self.sprite = pygame.transform.scale(self.original_sprite, display_size)
+            print(f"Successfully loaded sprite for {item_type.value} from {sprite_path}")
         except FileNotFoundError:
             print(f"Warning: Could not load sprite for {item_type.value} at {sprite_path}")
+            # Создаём placeholder
+            self.sprite = pygame.Surface(display_size)
+            self.sprite.fill((150, 150, 150))
+        except Exception as e:
+            print(f"Error loading sprite for {item_type.value}: {e}")
             # Создаём placeholder
             self.sprite = pygame.Surface(display_size)
             self.sprite.fill((150, 150, 150))
@@ -41,11 +50,20 @@ class ItemManager:
     Менеджер предметов инвентаря
     Принцип единственной ответственности: только управление предметами
     Каждый слот = 1 предмет
+    
+    Ограничения инвентаря:
+    - Расходные предметы (MEDKIT, AMMO): максимум 4 слота
+    - Оружие (PISTOL): 1 слот
     """
     
     def __init__(self):
         self.inventory_slots: List[InventoryItem] = []  # Список слотов инвентаря
         self.item_templates: Dict[ItemType, Dict] = self._load_item_definitions()
+        
+        # Константы ограничений
+        self.MAX_CONSUMABLE_SLOTS = 4
+        self.consumable_types = {ItemType.MEDKIT, ItemType.AMMO}
+        self.equipment_types = {ItemType.PISTOL}
     
     def _load_item_definitions(self) -> Dict[ItemType, Dict]:
         """Загружает шаблоны предметов"""
@@ -59,27 +77,57 @@ class ItemManager:
                 "display_size": (35, 20)
             },
             ItemType.PISTOL: {
-                "sprite_path": "assets/weapons/pistol/side.png",
+                "sprite_path": "assets/weapons/pistol/right/side.png",
                 "display_size": (40, 20)
-            },
-            ItemType.ARMOR: {
-                "sprite_path": "assets/weapons/pistol/side.png",  # Временно, пока нет спрайта брони
-                "display_size": (35, 20)
             }
         }
     
-    def add_item(self, item_type: ItemType, amount: int = 1):
-        """Добавляет предмет в инвентарь (каждый в отдельный слот)"""
+    def can_add_item(self, item_type: ItemType, amount: int = 1) -> bool:
+        """Проверяет, можно ли добавить предмет в инвентарь"""
+        if item_type in self.consumable_types:
+            # Для расходных предметов - проверяем общий лимит
+            current_consumables = sum(1 for item in self.inventory_slots 
+                                    if item.item_type in self.consumable_types)
+            return current_consumables + amount <= self.MAX_CONSUMABLE_SLOTS
+        
+        elif item_type in self.equipment_types:
+            # Для экипировки - проверяем, есть ли уже такой предмет
+            return not self.has_item(item_type)
+        
+        return False  # Неизвестный тип предмета
+    
+    def add_item(self, item_type: ItemType, amount: int = 1) -> bool:
+        """Добавляет предмет в инвентарь (каждый в отдельный слот)
+        Возвращает True если успешно добавлен, False если инвентарь переполнен"""
+        if not self.can_add_item(item_type, amount):
+            if item_type in self.consumable_types:
+                current_consumables = sum(1 for item in self.inventory_slots 
+                                        if item.item_type in self.consumable_types)
+                print(f"Cannot add {item_type.value}: consumable inventory full ({current_consumables}/{self.MAX_CONSUMABLE_SLOTS})")
+            else:
+                print(f"Cannot add {item_type.value}: already have this equipment")
+            return False
+        
         if item_type in self.item_templates:
             config = self.item_templates[item_type]
+            added_count = 0
             for _ in range(amount):
-                new_item = InventoryItem(
-                    item_type=item_type,
-                    sprite_path=config["sprite_path"],
-                    display_size=config["display_size"]
-                )
-                self.inventory_slots.append(new_item)
-            print(f"Added {amount} {item_type.value}(s). Total slots: {len(self.inventory_slots)}")
+                if self.can_add_item(item_type, 1):  # Проверяем перед каждым добавлением
+                    new_item = InventoryItem(
+                        item_type=item_type,
+                        sprite_path=config["sprite_path"],
+                        display_size=config["display_size"]
+                    )
+                    self.inventory_slots.append(new_item)
+                    added_count += 1
+                else:
+                    break
+            
+            if added_count > 0:
+                print(f"Added {added_count} {item_type.value}(s). Total slots: {len(self.inventory_slots)}")
+            return added_count > 0
+        
+        return False
     
     def remove_item(self, item_type: ItemType, amount: int = 1) -> bool:
         """Удаляет предмет из инвентаря"""
@@ -103,8 +151,22 @@ class ItemManager:
     
     def get_consumable_items(self) -> List[InventoryItem]:
         """Возвращает список расходных предметов для отображения в HUD"""
-        consumables = [ItemType.MEDKIT, ItemType.AMMO]
-        return [item for item in self.inventory_slots if item.item_type in consumables]
+        return [item for item in self.inventory_slots if item.item_type in self.consumable_types]
+    
+    def get_consumable_count(self) -> int:
+        """Возвращает количество занятых слотов расходными предметами"""
+        return sum(1 for item in self.inventory_slots if item.item_type in self.consumable_types)
+    
+    def get_inventory_status(self) -> str:
+        """Возвращает статус заполнения инвентаря"""
+        consumable_count = self.get_consumable_count()
+        equipment_items = [item.item_type.value for item in self.inventory_slots 
+                          if item.item_type in self.equipment_types]
+        
+        status = f"Consumables: {consumable_count}/{self.MAX_CONSUMABLE_SLOTS}"
+        if equipment_items:
+            status += f", Equipment: {', '.join(equipment_items)}"
+        return status
     
     def get_all_items_with_count(self) -> List[InventoryItem]:
         """Возвращает все предметы в слотах"""
