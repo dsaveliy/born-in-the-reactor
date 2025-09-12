@@ -20,3 +20,7 @@ class DamageEffect:
             effect_surface = pygame.Surface((screen_rect.width, screen_rect.height), pygame.SRCALPHA)
             effect_surface.fill((self.color[0], self.color[1], self.color[2], alpha))
             screen.blit(effect_surface, (0, 0))
+
+    def reset(self):
+        """Reset the damage effect state"""
+        self.timer = 0

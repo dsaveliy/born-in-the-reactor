@@ -15,8 +15,9 @@ class GameplayState:
         self.game = game
         self.settings = SettingsState(game)  # Create a temporary SettingsState instance
         self.current_level = self.settings.get_initial_level()
-        self.enemies_killed = 0  # Track score
+        self.enemies_killed = 0  # Track score  
         player_settings = self.settings.get_player_settings()
+        self.levels_completed = 0 # for points in changing level
         
         # Загрузка шрифта для HUD
         try:
@@ -529,6 +530,11 @@ class GameplayState:
         screen.blit(health_surface, (bar_x - 10, bar_y - 10))
 
     def change_level(self, new_level):
+        self.levels_completed += 1
+        level_points = 100 * self.levels_completed  # Example: 100 points per level, scaling with difficulty
+        self.enemies_killed += level_points  # Add to total score (enemies_killed is used as score)
+        print(f"Level completed! Added {level_points} points. Total score: {self.enemies_killed}")
+
         self.current_level = new_level
         self.settings.data["initial_level"] = new_level
         self.settings.save_settings()
@@ -541,7 +547,25 @@ class GameplayState:
         self.door_handler = DoorInteractionHandler(level.quest_system)
         self.door_handler.reset()
 
+    def reset_game(self):
+        print("Resetting game state")
+        self.enemies_killed = 0
+        self.levels_completed = 0
+        self.player.health = self.settings.get_player_settings().get("initial_health", 100)
+        if hasattr(self.player, 'ammo'):
+            self.player.ammo = self.settings.get_player_settings().get("initial_ammo", 0)
+        self.tracers = []
+        # self.text_display_manager.reset()
+        self.damage_effect.reset()
+        level = self.levels[self.current_level]
+        self.player.world_x = level.player_spawn['x']
+        self.player.world_y = level.player_spawn['y']
+        # Reset enemies' counted status to allow re-counting kills
+        for enemy in self.levels[self.current_level].enemies:
+            enemy.counted = False
+
     def enter(self):
+        self.levels_completed = 0
         pass
 
     def exit(self):

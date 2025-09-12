@@ -1,5 +1,5 @@
 {
-    "initial_level": "gomel_streets",
+    "initial_level": "hospital",
     "sound_enabled": false,
     "player": {
         "initial_health": 100,
