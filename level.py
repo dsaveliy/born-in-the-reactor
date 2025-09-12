@@ -21,6 +21,26 @@ class Level:
         self.player_spawn = self.data.get('player_spawn', {'x': 400, 'y': 300})
         self.enemies = [Enemy(e["x"], e["y"]) for e in self.data.get("enemies", [])]
         self.transition_zone = self.data.get("transition_zone", None)
+        
+        # Кэшируем изображения декоративных объектов
+        self.cached_decor_objects = []
+        for obj in self.objects_decor:
+            try:
+                image = pygame.image.load(obj["image"]).convert_alpha()
+                scaled_image = pygame.transform.scale(image, (obj['width'], obj['height']))
+                self.cached_decor_objects.append({
+                    'image': scaled_image,
+                    'x': obj['x'],
+                    'y': obj['y']
+                })
+            except FileNotFoundError:
+                print(f"Warning: Decor object image not found: {obj['image']}")
+                self.cached_decor_objects.append({
+                    'image': None,
+                    'x': obj['x'],
+                    'y': obj['y']
+                })
+        
         if self.transition_zone and "image" in self.transition_zone:
             self.door_image = pygame.image.load(self.transition_zone["image"]).convert_alpha()
             self.door_image = pygame.transform.scale( self.door_image, (self.transition_zone["width"],
@@ -31,6 +51,26 @@ class Level:
         # Инициализация системы квестов
         self.quest_system = QuestSystem()
         self.quest_system.load_from_level_data(self.data)
+        
+        # Кэшируем спрайты квестовых предметов
+        self.quest_item_sprites = {}
+        quest_item_types = ["pistol", "medkit", "ammo"]
+        for item_type in quest_item_types:
+            try:
+                if item_type == "pistol":
+                    sprite = pygame.image.load("assets/weapons/pistol/right/side.png").convert_alpha()
+                    sprite = pygame.transform.scale(sprite, (40, 25))
+                elif item_type == "medkit":
+                    sprite = pygame.image.load("assets/medkit/medkit.png").convert_alpha()
+                    sprite = pygame.transform.scale(sprite, (30, 20))
+                elif item_type == "ammo":
+                    sprite = pygame.image.load("assets/ammo/ammo.png").convert_alpha()
+                    sprite = pygame.transform.scale(sprite, (25, 15))
+                
+                self.quest_item_sprites[item_type] = sprite
+            except FileNotFoundError:
+                print(f"Warning: Quest item sprite not found: {item_type}")
+                self.quest_item_sprites[item_type] = None
 
         # загрузка фонового изображения
         if self.background_texture:
@@ -102,10 +142,9 @@ class Level:
                 )
             )
         
-        for object in self.objects_decor:
-                obj = pygame.image.load(object["image"]).convert_alpha()
-                scaled_obj = pygame.transform.scale(obj, (object['width'], object['height']))
-                screen.blit(scaled_obj, (object['x'] + camera_offset_x, object['y'] + camera_offset_y))
+        for cached_obj in self.cached_decor_objects:
+            if cached_obj['image']:
+                screen.blit(cached_obj['image'], (cached_obj['x'] + camera_offset_x, cached_obj['y'] + camera_offset_y))
 
         # отрисовка двери перехода
         if self.transition_zone:
@@ -122,41 +161,16 @@ class Level:
         self._render_quest_items(screen, camera_offset_x, camera_offset_y)
     
     def _render_quest_items(self, screen, camera_offset_x, camera_offset_y):
-        """Отрисовка квестовых предметов"""
         for quest_item in self.quest_system.get_spawned_items():
             item_x = quest_item.x + camera_offset_x
             item_y = quest_item.y + camera_offset_y
             
-            # Загружаем спрайт в зависимости от типа предмета
-            sprite = None
-            try:
-                if quest_item.item_type == "pistol":
-                    sprite = pygame.image.load("assets/weapons/pistol/right/side.png").convert_alpha()
-                    sprite = pygame.transform.scale(sprite, (40, 25))
-                elif quest_item.item_type == "medkit":
-                    sprite = pygame.image.load("assets/medkit/medkit.png").convert_alpha()
-                    sprite = pygame.transform.scale(sprite, (30, 20))
-                elif quest_item.item_type == "ammo":
-                    sprite = pygame.image.load("assets/ammo/ammo.png").convert_alpha()
-                    sprite = pygame.transform.scale(sprite, (25, 15))
-                    
-                if sprite:
-                    screen.blit(sprite, (item_x, item_y))
-                else:
-                    # Fallback к цветным прямоугольникам
-                    if quest_item.item_type == "pistol":
-                        color = (255, 255, 0)  # Жёлтый для пистолета
-                    elif quest_item.item_type == "medkit":
-                        color = (0, 255, 0)    # Зелёный для медкита
-                    elif quest_item.item_type == "ammo":
-                        color = (255, 165, 0)  # Оранжевый для патронов
-                    else:
-                        color = (255, 255, 255)  # Белый для остальных
-                    pygame.draw.rect(screen, color, (item_x, item_y, 30, 20))
-                    pygame.draw.rect(screen, (0, 0, 0), (item_x, item_y, 30, 20), 2)
-                    
-            except FileNotFoundError:
-                # Fallback к цветным прямоугольникам если спрайт не найден
+            # Используем кэшированный спрайт
+            sprite = self.quest_item_sprites.get(quest_item.item_type)
+            if sprite:
+                screen.blit(sprite, (item_x, item_y))
+            else:
+                # Fallback к цветным прямоугольникам
                 if quest_item.item_type == "pistol":
                     color = (255, 255, 0)  # Жёлтый для пистолета
                 elif quest_item.item_type == "medkit":

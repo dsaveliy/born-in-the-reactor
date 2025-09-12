@@ -1,23 +1,15 @@
-"""
-Система предметов инвентаря
-Управляет загрузкой, отображением и логикой предметов
-"""
-
 import pygame
 from typing import Dict, List, Optional
 from enum import Enum
 
 
 class ItemType(Enum):
-    """Типы предметов"""
     MEDKIT = "medkit"
     AMMO = "ammo"
     PISTOL = "pistol"
 
 
 class InventoryItem:
-    """Представляет предмет в инвентаре"""
-    
     def __init__(self, item_type: ItemType, sprite_path: str, display_size: tuple = (35, 20)):
         self.item_type = item_type
         self.sprite_path = sprite_path
@@ -46,16 +38,6 @@ class InventoryItem:
 
 
 class ItemManager:
-    """
-    Менеджер предметов инвентаря
-    Принцип единственной ответственности: только управление предметами
-    Каждый слот = 1 предмет
-    
-    Ограничения инвентаря:
-    - Расходные предметы (MEDKIT, AMMO): максимум 4 слота
-    - Оружие (PISTOL): 1 слот
-    """
-    
     def __init__(self):
         self.inventory_slots: List[InventoryItem] = []  # Список слотов инвентаря
         self.item_templates: Dict[ItemType, Dict] = self._load_item_definitions()
@@ -66,7 +48,6 @@ class ItemManager:
         self.equipment_types = {ItemType.PISTOL}
     
     def _load_item_definitions(self) -> Dict[ItemType, Dict]:
-        """Загружает шаблоны предметов"""
         return {
             ItemType.MEDKIT: {
                 "sprite_path": "assets/medkit/medkit.png",
@@ -83,7 +64,6 @@ class ItemManager:
         }
     
     def can_add_item(self, item_type: ItemType, amount: int = 1) -> bool:
-        """Проверяет, можно ли добавить предмет в инвентарь"""
         if item_type in self.consumable_types:
             # Для расходных предметов - проверяем общий лимит
             current_consumables = sum(1 for item in self.inventory_slots 
@@ -97,8 +77,6 @@ class ItemManager:
         return False  # Неизвестный тип предмета
     
     def add_item(self, item_type: ItemType, amount: int = 1) -> bool:
-        """Добавляет предмет в инвентарь (каждый в отдельный слот)
-        Возвращает True если успешно добавлен, False если инвентарь переполнен"""
         if not self.can_add_item(item_type, amount):
             if item_type in self.consumable_types:
                 current_consumables = sum(1 for item in self.inventory_slots 
@@ -130,7 +108,6 @@ class ItemManager:
         return False
     
     def remove_item(self, item_type: ItemType, amount: int = 1) -> bool:
-        """Удаляет предмет из инвентаря"""
         removed = 0
         for i in range(len(self.inventory_slots) - 1, -1, -1):  # Идём с конца
             if self.inventory_slots[i].item_type == item_type and removed < amount:
@@ -142,23 +119,18 @@ class ItemManager:
         return success
     
     def get_item_count(self, item_type: ItemType) -> int:
-        """Получает количество предметов"""
         return sum(1 for item in self.inventory_slots if item.item_type == item_type)
     
     def has_item(self, item_type: ItemType) -> bool:
-        """Проверяет наличие предмета"""
         return any(item.item_type == item_type for item in self.inventory_slots)
     
     def get_consumable_items(self) -> List[InventoryItem]:
-        """Возвращает список расходных предметов для отображения в HUD"""
         return [item for item in self.inventory_slots if item.item_type in self.consumable_types]
     
     def get_consumable_count(self) -> int:
-        """Возвращает количество занятых слотов расходными предметами"""
         return sum(1 for item in self.inventory_slots if item.item_type in self.consumable_types)
     
     def get_inventory_status(self) -> str:
-        """Возвращает статус заполнения инвентаря"""
         consumable_count = self.get_consumable_count()
         equipment_items = [item.item_type.value for item in self.inventory_slots 
                           if item.item_type in self.equipment_types]
@@ -169,5 +141,4 @@ class ItemManager:
         return status
     
     def get_all_items_with_count(self) -> List[InventoryItem]:
-        """Возвращает все предметы в слотах"""
         return self.inventory_slots.copy()

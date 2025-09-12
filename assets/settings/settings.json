@@ -1,6 +1,10 @@
 {
-    "initial_level": "hospital",
-    "sound_enabled": false,
+    "initial_level": "home",
+    "sound_enabled": true,
+    "music_enabled": true,
+    "master_volume": 1.0,
+    "sfx_volume": 0.7,
+    "music_volume": 0.2,
     "player": {
         "initial_health": 100,
         "initial_ammo": {
@@ -8,9 +12,13 @@
             "rifle": 50,
             "shotgun": 20
         },
-        "inventory": [],
-        "aim_line": true,
-        "health_damage_effect": true,
+        "inventory": [
+            "pistol",
+            "rifle",
+            "shotgun"
+        ],
+        "aim_line": false,
+        "health_damage_effect": false,
         "shot_animation": true,
         "id": "default_player",
         "photo": "assets/player/default_avatar.png",

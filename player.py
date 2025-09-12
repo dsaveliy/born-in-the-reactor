@@ -4,7 +4,7 @@ from config.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 from inventory_items import ItemManager, ItemType
 
 class Player:
-    def __init__(self, x, y, health=100, ammo=0, inventory=[], aim_line=1):
+    def __init__(self, x, y, health=100, ammo=0, inventory=[], aim_line=1, game=None):
         # выгружаю картинки
         self.animations = {
             "up":    [pygame.image.load("assets/player/up_0.png").convert_alpha(),
@@ -39,6 +39,14 @@ class Player:
         self.item_manager = ItemManager()
         self.weapons = {}  # Пустой инвентарь оружия
         self.current_weapon = None  # Нет текущего оружия
+        
+        # Создаем оружие из инвентаря
+        for weapon_type in self.inventory:
+            self.weapons[weapon_type] = Weapon(weapon_type)
+        
+        # Устанавливаем первое оружие как активное
+        if self.weapons:
+            self.current_weapon = list(self.weapons.keys())[0]
         self.fire_timer = 0.0
         # разворот в сторону стрельбы
         self.forced_facing = None
@@ -46,6 +54,7 @@ class Player:
         self.forced_facing_duration = 0.4
         # настрйока стрельбы
         self.aim_line = aim_line
+        self.game = game
     
     def switch_weapon(self, weapon_type):
         if weapon_type in self.inventory and weapon_type in self.weapons:
@@ -71,6 +80,10 @@ class Player:
                 # Расходуем патроны при перезарядке
                 self.item_manager.remove_item(ItemType.AMMO, 1)
                 print(f"Reloaded! Ammo remaining: {self.item_manager.get_item_count(ItemType.AMMO)}")
+                
+                # Звук перезарядки
+                if self.game and hasattr(self.game, 'audio_manager'):
+                    self.game.audio_manager.play_sound('reload')
             else:
                 print("No ammo to reload!")
     
@@ -299,12 +312,9 @@ class Player:
         return self.facing
     
     def add_item(self, item_type: ItemType, amount: int = 1) -> bool:
-        """Добавляет предмет в инвентарь
-        Возвращает True если успешно добавлен, False если инвентарь переполнен"""
         return self.item_manager.add_item(item_type, amount)
     
     def use_medkit(self) -> bool:
-        """Использует медкит для восстановления здоровья"""
         if self.health >= 100:
             print("Health is already full!")
             return False
@@ -315,11 +325,15 @@ class Player:
             healed = self.health - old_health
             print(f"Used medkit! Healed {healed} HP. Health: {self.health}/100")
             print(f"Medkits remaining: {self.item_manager.get_item_count(ItemType.MEDKIT)}")
+            
+            # Звук использования медкита
+            if self.game and hasattr(self.game, 'audio_manager'):
+                self.game.audio_manager.play_sound('medkit_use')
+            
             return True
         else:
             print("No medkits available!")
             return False
     
-    def has_item(self, item_type: ItemType) -> bool:
-        """Проверяет наличие предмета"""
+    def has_item(self, item_type: ItemType):
         return self.item_manager.has_item(item_type)

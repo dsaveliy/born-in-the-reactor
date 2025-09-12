@@ -92,6 +92,13 @@ class MainMenuState(State):
 
     def enter(self):
         print("Entered Main Menu State")
+        
+        # Загружаем и запускаем фоновую музыку для главного меню
+        if hasattr(self.game, 'audio_manager'):
+            self.game.audio_manager.load_music("assets/sounds/background_music.wav")
+            if not pygame.mixer.music.get_busy():
+                self.game.audio_manager.play_music()
+        
         self.selected_option = 0
         self.error_message = None
         self.error_timer = 0
@@ -249,18 +256,24 @@ class MainMenuState(State):
             if (keys[pygame.K_m] or (mouse_clicked and self.tooltip == "Press M for Settings")) and not self.action_triggered:
                 self.action_triggered = True
                 print("Transitioning to GameState.SETTINGS via icon")
+                if hasattr(self.game, 'audio_manager'):
+                    self.game.audio_manager.play_sound('menu_click')
                 self.game.change_state(GameState.SETTINGS)
                 self.error_message = None
                 self.error_timer = 0
             elif (keys[pygame.K_t] or (mouse_clicked and self.tooltip == "Press T for Stats")) and not self.action_triggered:
                 self.action_triggered = True
                 print("Transitioning to GameState.STATS via icon")
+                if hasattr(self.game, 'audio_manager'):
+                    self.game.audio_manager.play_sound('menu_click')
                 self.game.change_state(GameState.STATS)
                 self.error_message = None
                 self.error_timer = 0
             elif (keys[pygame.K_h] or (mouse_clicked and self.tooltip == "Press H for Help")) and not self.action_triggered:
                 self.action_triggered = True
                 print("Transitioning to GameState.HELP via icon")
+                if hasattr(self.game, 'audio_manager'):
+                    self.game.audio_manager.play_sound('menu_click')
                 self.game.change_state(GameState.HELP)
                 self.error_message = None
                 self.error_timer = 0

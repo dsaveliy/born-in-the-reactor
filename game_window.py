@@ -1,5 +1,6 @@
 import pygame
 import sys
+import json
 from pathlib import Path
 from state import GameState
 from menu_state import MainMenuState
@@ -8,6 +9,7 @@ from settings_state import SettingsState
 from stats_state import StatsState
 from help_state import HelpState
 from cutscene_state import CutsceneState
+from audio_manager import AudioManager
 #from pause import PauseState
 from game_over import GameOverState
 #from level_transition import LevelTransitionState
@@ -19,7 +21,14 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.dt = 0
-        self.mouse_wheel = 0  
+        self.mouse_wheel = 0
+        
+        # Инициализация аудио менеджера
+        self.audio_manager = AudioManager()
+        
+        # Загружаем настройки звука
+        self._load_audio_settings()
+        
         self._init_states()
         self.current_state = GameState.MAIN_MENU
         self.states[self.current_state].enter()
@@ -27,6 +36,23 @@ class Game:
     def _init_pygame(self):
         pygame.init()
         pygame.display.set_caption("BORN IN THE REACTOR")
+    
+    def _load_audio_settings(self):
+        """Загружает настройки звука из файла настроек"""
+        try:
+            with open("assets/settings/settings.json", 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+            
+            # Применяем настройки к аудио менеджеру
+            self.audio_manager.set_sound_enabled(settings.get("sound_enabled", True))
+            self.audio_manager.set_music_enabled(settings.get("music_enabled", True))
+            self.audio_manager.set_master_volume(settings.get("master_volume", 1.0))
+            self.audio_manager.set_sfx_volume(settings.get("sfx_volume", 0.7))
+            self.audio_manager.set_music_volume(settings.get("music_volume", 0.2))
+            
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading audio settings: {e}")
+            # Используем настройки по умолчанию
     
     def _init_states(self):
         self.states = {
@@ -64,9 +90,11 @@ class Game:
                 elif event.type == pygame.MOUSEWHEEL:
                     self.mouse_wheel += event.y 
             
+            # Ограничиваем FPS для стабильности
             self.dt = self.clock.tick(60) / 1000
             self.states[self.current_state].update(self.dt)
             
+            # Очищаем экран только если нужно
             self.screen.fill((0, 0, 0))
             self.states[self.current_state].render(self.screen)
             pygame.display.flip()
