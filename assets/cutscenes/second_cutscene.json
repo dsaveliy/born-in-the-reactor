@@ -1,0 +1,8 @@
+{
+  "background_image": "assets/cutscenes/gomel_cut2.png",
+  "text": "Oh no, something is clearly wrong with Gomel. I don't recognize my own city anymore. Everything has changed... The familiar streets are now alien territory.",
+  "black_duration": 0.0,
+  "first_fade_duration": 4.0,
+  "text_duration": 6.0,
+  "fade_duration": 2.0
+}

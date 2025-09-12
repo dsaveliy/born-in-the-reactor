@@ -31,13 +31,21 @@ class SettingsState(State):
             with open(file_path, 'r', encoding='utf-8') as f:
                 self.data = json.load(f)
             # Validate initial_level to prevent KeyError in GameplayState
-            if self.data.get("initial_level") not in ["gomel_streets", "hospital", "office"]:
+            if self.data.get("initial_level") not in ["gomel_streets", "home", "office"]:
                 print(f"Invalid initial_level '{self.data.get('initial_level')}', resetting to 'gomel_streets'")
                 self.data["initial_level"] = "gomel_streets"
                 self.save_settings(file_path)
             # Ensure required settings exist
             if "sound_enabled" not in self.data:
                 self.data["sound_enabled"] = True
+            if "music_enabled" not in self.data:
+                self.data["music_enabled"] = True
+            if "master_volume" not in self.data:
+                self.data["master_volume"] = 1.0
+            if "sfx_volume" not in self.data:
+                self.data["sfx_volume"] = 0.7
+            if "music_volume" not in self.data:
+                self.data["music_volume"] = 0.2
             if "player" not in self.data:
                 self.data["player"] = {}
             if "id" not in self.data["player"]:
@@ -117,6 +125,8 @@ class SettingsState(State):
             # Toggle sound
             if 200 < mouse_pos[0] < 400 and 200 < mouse_pos[1] < 250:
                 self.data["sound_enabled"] = not self.data["sound_enabled"]
+                if hasattr(self.game, 'audio_manager'):
+                    self.game.audio_manager.set_sound_enabled(self.data["sound_enabled"])
                 self.save_settings()
                 self.action_triggered = True
             # Toggle health damage effect

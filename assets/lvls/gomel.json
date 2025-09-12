@@ -44,11 +44,11 @@
   ],
   "player_spawn": {"x": 50, "y": 50},
   "transition_zone": {
-    "x": 940,
-    "y": 560,
+    "x": 900,
+    "y": 200,
     "width": 70,
-    "height": 70,
-    "target_level": "hospital",
+    "height": 20,
+    "target_level": "home",
     "image": "assets/bgs/door.png"
   }
 }
