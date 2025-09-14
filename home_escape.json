@@ -1,0 +1,18 @@
+{
+  "background_image": "assets/cutscenes/gomel_cut2.png",
+  "second_image": "assets/cutscenes/gomel_cut3.png",
+  "text": "I made it out of the house... but the streets are even worse than I imagined. The air is thick with radiation and smoke.",
+  "second_text": "I need to find shelter and other survivors. The hospital checkpoint should be nearby. Maybe they can help...",
+  "black_duration": 1.0,
+  "first_fade_duration": 3.0,
+  "text_duration": 8.0,
+  "chars_per_second": 10,
+  "blink_duration": 0.7,
+  "black_pause_duration": 1.5,
+  "slow_fade_duration": 4.0,
+  "second_text_duration": 11.0,
+  "second_chars_per_second": 12,
+  "title_screen_duration": 0.0,
+  "wait_for_input": false,
+  "fade_duration": 3.0
+}

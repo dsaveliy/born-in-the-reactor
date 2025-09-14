@@ -383,8 +383,8 @@ class CutsceneState(State):
         
         elif self.current_phase == CutscenePhase.SHOW_SECOND_TEXT:
             if self.second_typewriter_effect and self.second_typewriter_effect.finished:
-                # дополнительная задержка после завершения печати
-                return self.phase_timer >= 3.0
+                # автоматический переход после небольшой паузы
+                return self.phase_timer >= self.config.get_phase_duration(self.current_phase) + 2.0  # 2 секунды паузы
             return False
         
         # для интерактивных фаз не переходим автоматически

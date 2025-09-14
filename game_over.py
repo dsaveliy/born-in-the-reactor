@@ -9,7 +9,7 @@ class GameOverState(State):
         self.score = score
         self.stats = StatsState(game)
         try:
-            self.font = pygame.font.Font("assets/fonts/Orbitron-Light.ttf", 36)
+            self.font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 24)
             self.button_font = pygame.font.Font("assets/fonts/Orbitron-Bold.ttf", 24)
         except FileNotFoundError:
             print("Error loading Orbitron-Light font, using default")
@@ -17,7 +17,7 @@ class GameOverState(State):
             self.button_font = pygame.font.Font(None, 24)
         
         try:
-            self.background = pygame.image.load("assets/bgs/over_bg.jpg").convert()
+            self.background = pygame.image.load("assets/bgs/back.png").convert()
             self.background = pygame.transform.scale(self.background, (800, 600))
         except FileNotFoundError:
             print("Error loading game over background")
